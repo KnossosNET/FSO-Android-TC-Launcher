@@ -1,0 +1,11 @@
+{
+  "displayName": "FreeSpace 2 Demo",
+  "nebulaId": "fs2_org_demo",
+  "contentRange": ">=1.10.2",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0"
+  ]
+}

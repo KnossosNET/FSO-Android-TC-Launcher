@@ -1,0 +1,9 @@
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+rootProject.name = 'FSO Android TC Launcher'
+include ':core'
+project(':core').projectDir = file('shared/core')
+file('versions').listFiles().findAll { new File(it, 'build.gradle').isFile() }.sort().each {
+    include ':' + it.name
+    project(':' + it.name).projectDir = it
+}

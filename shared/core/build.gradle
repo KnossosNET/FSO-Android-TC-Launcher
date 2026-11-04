@@ -1,0 +1,19 @@
+plugins { id 'java-library' }
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+dependencies {
+    api 'com.google.code.gson:gson:2.11.0'
+    implementation 'org.apache.commons:commons-compress:1.27.1'
+    implementation 'org.tukaani:xz:1.10'
+    testImplementation 'junit:junit:4.13.2'
+}
+test { workingDir rootProject.projectDir }
+tasks.register('probeNebula', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.fsolauncher.core.NebulaProbe'
+    args rootProject.file('fixtures').absolutePath
+}
+tasks.register('probeDemo', JavaExec) {
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.fsolauncher.core.NebulaProbe'
+    args rootProject.file('fixtures').absolutePath, 'demo'
+}

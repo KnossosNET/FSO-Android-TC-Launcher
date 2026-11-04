@@ -1,0 +1,9 @@
+{
+  "applicationId": "com.fsolauncher.newtc",
+  "displayName": "Your Game",
+  "versionCode": 1,
+  "versionName": "0.1.0",
+  "abis": [
+    "arm64-v8a"
+  ]
+}

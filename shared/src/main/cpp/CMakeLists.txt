@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(touchcontrols)
+add_library(touchcontrols SHARED touch_controls.cpp)
+add_library(SDL3 SHARED IMPORTED)
+set_target_properties(SDL3 PROPERTIES IMPORTED_LOCATION "${FSO_JNI_DIR}/${ANDROID_ABI}/libSDL3.so")
+target_include_directories(touchcontrols PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/third_party/SDL3")
+target_link_libraries(touchcontrols SDL3 android log)
+target_link_options(touchcontrols PRIVATE "-Wl,-z,max-page-size=16384")

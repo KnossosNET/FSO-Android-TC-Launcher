@@ -1,0 +1,90 @@
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+apply plugin: 'com.android.application'
+def spec = new JsonSlurper().parse(file('version.json'))
+def launcherInfo = new Properties()
+rootProject.file('shared/launcher-version.properties').withInputStream { launcherInfo.load(it) }
+def signingFile = rootProject.file('signing.properties')
+def signingProps = new Properties()
+if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+def abis = (spec.abis ?: ['arm64-v8a']) as List
+android {
+    namespace 'com.shivansps.fsowrapper'
+    compileSdk 36
+    ndkVersion '29.0.14033849'
+    defaultConfig {
+        applicationId spec.applicationId
+        minSdk 28
+        targetSdk 36
+        versionCode spec.versionCode as int
+        versionName spec.versionName
+        resValue 'string', 'app_name', spec.displayName
+        buildConfigField 'String', 'LAUNCHER_VERSION', JsonOutput.toJson(launcherInfo.versionName)
+        buildConfigField 'String', 'TC_LAUNCHER_VERSION', JsonOutput.toJson(spec.versionName)
+        ndk { abiFilters.addAll(abis) }
+        externalNativeBuild {
+            cmake {
+                arguments '-DFSO_JNI_DIR=' + project.file('src/main/jniLibs').absolutePath.replace('\\','/'),
+                    '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON'
+                cppFlags '-std=c++17'
+            }
+        }
+    }
+    signingConfigs {
+        if (!signingProps.isEmpty()) {
+            release {
+                storeFile rootProject.file(signingProps.storeFile)
+                storePassword signingProps.storePassword
+                keyAlias signingProps.keyAlias
+                keyPassword signingProps.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (!signingProps.isEmpty()) signingConfig signingConfigs.release
+        }
+    }
+    sourceSets {
+        main {
+            manifest.srcFile rootProject.file('shared/src/main/AndroidManifest.xml')
+            java.srcDir rootProject.file('shared/src/main/java')
+            res.srcDir rootProject.file('shared/src/main/res')
+            assets.srcDir rootProject.file('shared/src/main/assets')
+        }
+    }
+    externalNativeBuild {
+        cmake { path rootProject.file('shared/src/main/cpp/CMakeLists.txt'); version '3.22.1' }
+    }
+    compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    buildFeatures { buildConfig true }
+    packaging {
+        jniLibs { useLegacyPackaging = true }
+        resources { excludes += ['META-INF/versions/**', 'META-INF/LICENSE*', 'META-INF/NOTICE*'] }
+    }
+    applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = spec.applicationId + '-' +
+                (variant.buildType.name == 'release' && !signingProps.isEmpty() ? 'signed' : variant.buildType.name) + '.apk'
+        }
+    }
+}
+def validateNatives = tasks.register('validateNatives') {
+    doLast {
+        abis.each { abi ->
+            def folder = file('src/main/jniLibs/' + abi)
+            if (!new File(folder, 'libSDL3.so').exists() || !new File(folder, 'libfso.so').exists())
+                throw new GradleException('Missing engine for ' + project.name + '/' + abi + '. See scripts/import-engine.py.')
+        }
+    }
+}
+tasks.named('preBuild').configure { dependsOn validateNatives }
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    implementation project(':core')
+    implementation 'androidx.core:core:1.17.0'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.1'
+}

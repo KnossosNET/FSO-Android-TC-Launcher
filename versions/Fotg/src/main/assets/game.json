@@ -1,0 +1,14 @@
+{
+  "displayName": "Fate of the Galaxy",
+  "nebulaId": "FotG_R",
+  "contentRange": ">=1.1.1",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0",
+    "-aa",
+    "-soft_particles",
+    "-deferred_cockpit"
+  ]
+}

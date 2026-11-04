@@ -1,0 +1,11 @@
+{
+  "displayName": "Your Game",
+  "nebulaId": "REPLACE_WITH_NEBULA_ID",
+  "contentRange": "*",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0"
+  ]
+}

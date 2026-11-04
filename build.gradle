@@ -1,0 +1,15 @@
+plugins { id 'com.android.application' version '8.13.0' apply false }
+tasks.register('releaseApks') {
+    def games = file('versions').listFiles().findAll { new File(it, 'build.gradle').isFile() }
+    dependsOn games.collect { ':' + it.name + ':assembleRelease' }
+    doLast {
+        if (!file('signing.properties').isFile()) throw new GradleException('Configure signing.properties before collecting signed APKs.')
+        games.each { game ->
+            copy {
+                from new File(game, 'build/outputs/apk/release')
+                include '*-signed.apk'
+                into file('dist')
+            }
+        }
+    }
+}
