@@ -9,7 +9,6 @@ Native Android Studio project for independently installed FreeSpace Open total c
 | Fotg | com.fsolauncher.fotg | FotG_R | 1.1.1 or newer |
 | fs2demo | com.fsolauncher.fs2demo | fs2_org_demo | 1.10.2 or newer |
 
-FotG's identity, artwork and default FSO arguments come from the supplied Knossos.NET standalone release. No game packages are embedded in an APK. FotG's initial complete download is approximately 2.57 GB at version 1.1.1.
 
 ## Layout
 
@@ -19,8 +18,6 @@ FotG's identity, artwork and default FSO arguments come from the supplied Knosso
 - versions/Fotg and versions/fs2demo: independent Android application modules.
 - template: instructions and starter module for another TC.
 - scripts: engine import, new-version creation, development signing and native-page validation.
-- fixtures: public repository/API samples used by integration tests.
-- licenses and THIRD_PARTY_NOTICES.md: copied source attribution and distribution obligations.
 - upstream: local reference checkouts, excluded from source control and compilation.
 
 ## Build in Android Studio
@@ -78,8 +75,6 @@ Update an engine by replacing that version's jniLibs through the import script, 
 
 The shared overlay is copied from FSO Android Wrapper, also used by Knossos.NET. It includes the radial weapon, target and communications controls, mouse flight pad, afterburner ring, top shortcuts, keyboard toggle and HUD visibility modes.
 
-Standard Android gamepads continue through SDL's input system. The optional direct BLE Steam Controller HID path is disabled; no Bluetooth runtime permissions are requested. USB permission receivers are restricted to the application, and Android back gestures generate the same Escape input as the physical Back button.
-
 Each version packages src/main/assets/touch.json. Developers can remap bridge codes, replace individual radial actions or button bindings, and choose the initial HUD mode. There is no user remapping screen and the profile is never fetched from Nebula. See template/readme.md. Keep the stable Java namespace/JNI symbols unless rebuilding the bridge as well; applicationId remains independently configurable.
 
 The launcher offers an ES / VK graphics selector, with Vulkan selected by default, followed by a Show FPS checkbox (off by default). Preferences are saved separately for each installed TC. The selected graphics backend adds exactly one of -opengl or -vulkan, and Show FPS adds -fps only when checked. These controls override conflicting copies of those switches in game.json. Vulkan is an optional device capability in the manifest so ES-only devices can install the application.
@@ -87,37 +82,6 @@ The launcher offers an ES / VK graphics selector, with Vulkan selected by defaul
 The footer displays Launcher Version: {shared version} / {TC version}. Edit shared/launcher-version.properties to change the common launcher version. Edit versionName in a TC's versions/{TC}/version.json for its manually maintained launcher variant version. versionCode remains the Android update counter and must increase for distributed APK updates.
 
 Engine Version is queried from the bundled native engine on application startup using -get_flags json_v2. A separate :flags SDL activity receives the engine's setFlagsJson JNI callback and returns version.full. The displayed value is never inferred from filenames or engine-provenance.json. A failed query displays Unavailable; a stalled request ends after 30 seconds. This mechanism is adapted from Knossos.NET's FlagsActivity and AndroidHelper.
-
-The activity result is stored synchronously inside the JNI callback, before SDL closes the flags activity when its native entry point returns. Diagnostic messages use the FSOFlags logcat tag; package progress uses FSOInstall.
-
-Validate both graphics backends, performance, controls and any TC-specific graphics flags on the intended physical devices before distribution.
-
-## Validation
-
-    .\gradlew.bat :core:test
-    .\gradlew.bat :core:probeNebula
-    .\gradlew.bat :core:probeDemo
-    .\gradlew.bat :Fotg:lintDebug :fs2demo:lintDebug
-    python scripts/check-native-pages.py dist/com.fsolauncher.fotg-signed.apk
-
-The live probe downloads only FotG's small FG_Core package, verifies the real API graph, extracts 7z data and checks every file checksum. It does not download the full game. See VALIDATION.md for the checks performed on this working copy and the remaining device checks.
-
-probeDemo separately downloads the complete FS2 Demo content (approximately 50 MB), verifies/extracts all its packages, checks the resulting installation and deletes the test content.
-
-## Google Play preparation
-
-The project uses API 36, 64-bit native code, app-specific storage, HTTPS, a non-exported game activity/service and a declared dataSync foreground service. Native ELF load segments are checked for 16 KB page support. Engines are installed with the application; Nebula distributes only game data.
-
-These choices support store submission; approval is not guaranteed. Before publishing, use production signing and an AAB, complete Play Console declarations for the foreground service, content rating, privacy/data safety, and verify branding/content rights and third-party source/license obligations. Test Android 9 through current releases, 16 KB devices, large downloads, background interruptions, real gameplay and upgrade compatibility. The foreground transfer stops when Android imposes its dataSync timeout; users can resume from the launcher.
-
-Official references reviewed on 2026-11-04:
-- https://developer.android.com/google/play/requirements/target-sdk
-- https://developer.android.com/guide/practices/page-sizes
-- https://support.google.com/googleplay/android-developer/answer/16559646
-- https://developer.android.com/develop/background-work/services/fgs/service-types
-- https://developer.android.com/develop/background-work/services/fgs/timeout
-
-See THIRD_PARTY_NOTICES.md for exact upstream snapshots and copied files.
 
 ## GitHub draft releases
 
