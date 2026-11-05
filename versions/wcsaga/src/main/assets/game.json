@@ -1,0 +1,18 @@
+{
+  "displayName": "Wing Commander Saga",
+  "nebulaId": "Wing_Commander_Saga",
+  "contentRange": ">=0.9.65",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0"
+  ],
+  "communityLinks": [
+    {
+      "label": "Website",
+      "url": "https://www.wcsaga.com/",
+      "icon": "web"
+    }
+  ]
+}

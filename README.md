@@ -2,12 +2,19 @@
 
 Native Android Studio project for independently installed FreeSpace Open total conversions. Each game is a separate application with its own application ID, name, icon, packaged engine, content installation and pilot storage.
 
+<p float="left">
+  <img src="https://i.imgur.com/WyVKcgR.jpeg" width="32%" />
+  <img src="https://i.imgur.com/mg8EmNt.jpeg" width="32%" />
+  <img src="https://i.imgur.com/8SOWQra.jpeg" width="32%" />
+</p>
+
 ## Included applications
 
 | Module | Application ID | Nebula ID | Content baseline |
 | --- | --- | --- | --- |
 | Fotg | com.fsolauncher.fotg | FotG_R | 1.1.1 or newer |
 | fs2demo | com.fsolauncher.fs2demo | fs2_org_demo | 1.10.2 or newer |
+| wcsaga | com.fsolauncher.wcsaga | Wing_Commander_Saga | 0.9.65 or newer |
 
 ## Layout
 

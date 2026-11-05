@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the supplied icon inside 66/108 of the adaptive foreground at every size. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="19.4444%" android:insetTop="19.4444%"
+    android:insetRight="19.4444%" android:insetBottom="19.4444%">
+    <bitmap android:src="@drawable/wcsaga_icon" android:gravity="fill" android:filter="true"/>
+</inset>
