@@ -1,0 +1,22 @@
+{
+  "links": [
+    {
+      "label": "Hard-Light",
+      "description": "Hard-Light community",
+      "url": "https://www.hard-light.net/",
+      "icon": "forum"
+    },
+    {
+      "label": "FSO",
+      "description": "FreeSpace Open on GitHub",
+      "url": "https://github.com/scp-fs2open/fs2open.github.com",
+      "icon": "github"
+    },
+    {
+      "label": "Launcher",
+      "description": "FSO Android TC Launcher on GitHub",
+      "url": "https://github.com/KnossosNET/FSO-Android-TC-Launcher",
+      "icon": "github"
+    }
+  ]
+}

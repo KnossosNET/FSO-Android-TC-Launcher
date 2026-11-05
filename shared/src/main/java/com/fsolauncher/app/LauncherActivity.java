@@ -103,11 +103,20 @@ public final class LauncherActivity extends Activity {
         showFps.setChecked(preferences.getBoolean("show_fps",false));
         showFps.setOnCheckedChangeListener((button,checked) -> preferences.edit().putBoolean("show_fps",checked).apply());
         panel.addView(showFps, new LinearLayout.LayoutParams(-1,dp(48)));
+        View tcCommunity = CommunityLinksUi.tcColumn(this,spec.communityLinks);
+        if (tcCommunity != null) panel.addView(tcCommunity,new LinearLayout.LayoutParams(-1,-2));
         TextView launcherVersion = text("Launcher Version: " + BuildConfig.LAUNCHER_VERSION
             + " / " + BuildConfig.TC_LAUNCHER_VERSION,13,Color.LTGRAY);
         launcherVersion.setPadding(0,dp(20),0,dp(6)); panel.addView(launcherVersion);
         engineVersion = text("",13,Color.LTGRAY); panel.addView(engineVersion);
         updateEngineVersionLabel();
+        View sharedCommunity = CommunityLinksUi.compactRow(this,CommunityLinksUi.shared(this));
+        if (sharedCommunity != null) {
+            LinearLayout.LayoutParams linksLayout = new LinearLayout.LayoutParams(-2,dp(48));
+            linksLayout.gravity = Gravity.LEFT;
+            linksLayout.topMargin = dp(4);
+            panel.addView(sharedCommunity,linksLayout);
+        }
         setContentView(frame);
         ViewCompat.setOnApplyWindowInsetsListener(frame,(view,insets) -> {
             androidx.core.graphics.Insets safe = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());

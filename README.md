@@ -9,7 +9,6 @@ Native Android Studio project for independently installed FreeSpace Open total c
 | Fotg | com.fsolauncher.fotg | FotG_R | 1.1.1 or newer |
 | fs2demo | com.fsolauncher.fs2demo | fs2_org_demo | 1.10.2 or newer |
 
-
 ## Layout
 
 - shared/src/main: shared native Android launcher, SDL3 host, touch overlay, JNI input bridge and resources.
@@ -18,7 +17,6 @@ Native Android Studio project for independently installed FreeSpace Open total c
 - versions/Fotg and versions/fs2demo: independent Android application modules.
 - template: instructions and starter module for another TC.
 - scripts: engine import, new-version creation, development signing and native-page validation.
-- upstream: local reference checkouts, excluded from source control and compilation.
 
 ## Build in Android Studio
 
@@ -37,12 +35,16 @@ To intentionally package fewer architectures, use an explicit filter:
 
 All selected inputs are validated and copied to staging before replacing existing binaries. If replacement fails, the previous native folders and metadata are restored. Unsupported source subfolders are ignored; a supported ABI folder with missing SDL3 or an ambiguous engine causes the import to fail without modifying the previous installation.
 
+
+
 Build debug APKs:
     .\gradlew.bat :Fotg:assembleDebug :fs2demo:assembleDebug
 
 Build signed release APKs:
     .\gradlew.bat releaseApks
 
+	
+	
 Signed outputs are collected in dist/com.fsolauncher.fotg-signed.apk and dist/com.fsolauncher.fs2demo-signed.apk. Each module also contains its APK under build/outputs/apk/release.
 
 A local DEVELOPMENT key is supplied only in this working copy under signing/ and is excluded from source control. These binaries are suitable for testing. Configure a private production key in signing.properties before store distribution. A new working copy can generate a development key with:
@@ -50,8 +52,20 @@ A local DEVELOPMENT key is supplied only in this working copy under signing/ and
 
 Production signing.properties has the keys storeFile, storePassword, keyAlias and keyPassword. Keep it and all keystores private. Retain the signing key used for distributed applications so future APKs can update them. Do not publish development keys as production identities.
 
+
+
 Google Play bundles can be built with:
     .\gradlew.bat :Fotg:bundleRelease :fs2demo:bundleRelease
+
+
+	
+## Add / Change the FSO build of a module and build APKs
+
+Each module have their own FSO version, and the java loader looks for "libfso.so" along with all other dependencies. In order to add or update the include FSO build, run these commands.
+
+python scripts/import-engine.py Fotg "D:\path\to\jniLibs"
+python scripts/import-engine.py fs2demo "D:\path\to\jniLibs"
+...
 
 ## Content installation and updates
 
@@ -82,11 +96,3 @@ The launcher offers an ES / VK graphics selector, with Vulkan selected by defaul
 The footer displays Launcher Version: {shared version} / {TC version}. Edit shared/launcher-version.properties to change the common launcher version. Edit versionName in a TC's versions/{TC}/version.json for its manually maintained launcher variant version. versionCode remains the Android update counter and must increase for distributed APK updates.
 
 Engine Version is queried from the bundled native engine on application startup using -get_flags json_v2. A separate :flags SDL activity receives the engine's setFlagsJson JNI callback and returns version.full. The displayed value is never inferred from filenames or engine-provenance.json. A failed query displays Unavailable; a stalled request ends after 30 seconds. This mechanism is adapted from Knossos.NET's FlagsActivity and AndroidHelper.
-
-## GitHub draft releases
-
-The workflow in .github/workflows/tag-release.yml builds every configured game when any tag is pushed, verifies all APKs and attaches them to a new draft release. Re-runs can update draft assets but never modify an already published release. No release is automatically published.
-
-Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD as repository Actions secrets once. Use the same signing key as previously distributed APKs. The workflow deliberately fails instead of generating an incompatible random key when signing secrets are missing.
-
-See .github/RELEASES.md for complete setup, required repository files, tagging commands and local checks.

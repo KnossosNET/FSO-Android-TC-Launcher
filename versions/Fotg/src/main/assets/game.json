@@ -10,5 +10,27 @@
     "-aa",
     "-soft_particles",
     "-deferred_cockpit"
+  ],
+  "communityLinks": [
+    {
+      "label": "Website",
+      "url": "https://www.fateofthegalaxy.net/",
+      "icon": "web"
+    },
+    {
+      "label": "Discord",
+      "url": "https://discord.com/invite/k7ZMdmt",
+      "icon": "discord"
+    },
+    {
+      "label": "Wiki",
+      "url": "https://wiki.hard-light.net/index.php/Fate_of_the_Galaxy",
+      "icon": "wiki"
+    },
+    {
+      "label": "Forums",
+      "url": "https://www.hard-light.net/forums/index.php?board=143.0",
+      "icon": "forum"
+    }
   ]
 }

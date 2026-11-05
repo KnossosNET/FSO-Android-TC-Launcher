@@ -14,6 +14,19 @@
    With signing configured, the output is versions/MyTC/build/outputs/apk/release/com.fsolauncher.mytc-signed.apk. The root releaseApks task collects all configured versions in dist/.
 8. Check dependencies, download/install, offline play, interrupted updates and controls on physical devices. Verify content and artwork distribution rights before publication.
 
+## Community links
+
+The template's game.json contains communityLinks: []. Leave it empty or omit it when the TC has no community links. Add entries with label and url to show centered buttons, one below another, above Launcher Version and Engine Version:
+
+    "communityLinks": [
+      {"label": "Website", "url": "https://example.com/"},
+      {"label": "Discord", "url": "https://discord.com/invite/example", "icon": "discord"}
+    ]
+
+icon is optional. Built-in values are web, discord, github, wiki and forum. A custom drawable added under this module's src/main/res/drawable can also be referenced by its resource name. An optional description supplies a longer accessibility label and tooltip.
+
+The small shared Hard-Light / FSO / Launcher row is configured once in shared/community-links.json and appears below Engine Version in every module. Keep its labels short; the entire row is limited to 45% of the viewport width. Set its links array to [] to hide the shared row. Changes are packaged at build time.
+
 ## Packaged touch profiles
 
 src/main/assets/touch.json is compiled into this APK. Players cannot remap it in the launcher. The shared overlay layout can also be overridden by adding src/main/res/layout/overlay_controls.xml to this module while preserving its view IDs and types.

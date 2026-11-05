@@ -1,1 +1,7 @@
-<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108"><path android:fillColor="#27b8de" android:pathData="M54,20 L80,76 L54,64 L28,76 Z M54,36 L45,57 L54,53 L63,57 Z"/></vector>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep the supplied icon inside 66/108 of the adaptive foreground at every size. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="19.4444%" android:insetTop="19.4444%"
+    android:insetRight="19.4444%" android:insetBottom="19.4444%">
+    <bitmap android:src="@drawable/fs2demo_icon" android:gravity="fill" android:filter="true"/>
+</inset>

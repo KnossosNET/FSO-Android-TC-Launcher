@@ -12,6 +12,7 @@ public final class GameSpec {
     public String displayName, nebulaId, contentRange;
     public boolean includeRecommended = true;
     public List<String> arguments = new ArrayList<>();
+    public List<CommunityLink> communityLinks = new ArrayList<>();
     public List<String> repositoryMirrors = new ArrayList<>(NebulaRepository.DEFAULT_REPOS);
     public List<String> apiMirrors = new ArrayList<>(NebulaRepository.DEFAULT_APIS);
     public static GameSpec load(Context context) throws IOException {
