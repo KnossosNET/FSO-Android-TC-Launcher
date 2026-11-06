@@ -31,47 +31,47 @@ Use JDK 17, Android SDK Platform 36, NDK 29.0.14033849 and CMake 3.22.1. Open th
 
 The included engine was imported separately into each version from the local FSO Android prebuilts. engine-provenance.json records source filenames and SHA-256 values. SDL3 Java/header sources and native SDL must match; this snapshot uses SDL 3.4.13. Engines export android_main and are loaded only from the installed APK's native library directory.
 
-For a fresh checkout, point local.properties at your SDK, then import your own engine:
-    python scripts/import-engine.py Fotg D:/Fso-Android-Prebuilts/fso_android/jniLibs
-    python scripts/import-engine.py fs2demo D:/Fso-Android-Prebuilts/fso_android/jniLibs
+For a fresh checkout, point local.properties at your SDK, then import your own engine:<br />
+    python scripts/import-engine.py Fotg D:/Fso-Android-Prebuilts/fso_android/jniLibs<br />
+    python scripts/import-engine.py fs2demo D:/Fso-Android-Prebuilts/fso_android/jniLibs<br />
 
 The importer automatically detects every supported ABI subfolder in the source (arm64-v8a, armeabi-v7a, x86_64 and x86), imports one release engine and its dependencies for each, and updates both version.json's abis list and engine-provenance.json. The previous abis list does not restrict discovery. DEBUG libraries are excluded unless explicitly selected as the engine. The source directory must be separate from the destination version's jniLibs.
 
-To intentionally package fewer architectures, use an explicit filter:
+To intentionally package fewer architectures, use an explicit filter:<br />
     python scripts/import-engine.py Fotg D:/jniLibs --abis arm64-v8a x86_64
 
 All selected inputs are validated and copied to staging before replacing existing binaries. If replacement fails, the previous native folders and metadata are restored. Unsupported source subfolders are ignored; a supported ABI folder with missing SDL3 or an ambiguous engine causes the import to fail without modifying the previous installation.
 
 
-
-Build debug APKs:
-    .\gradlew.bat :Fotg:assembleDebug :fs2demo:assembleDebug
-
-Build signed release APKs:
-    .\gradlew.bat releaseApks
-
+<br />
+Build debug APKs:<br />
+    .\gradlew.bat :Fotg:assembleDebug :fs2demo:assembleDebug<br />
+<br />
+Build signed release APKs:<br />
+    .\gradlew.bat releaseApks<br />
+<br />
 	
 	
 Signed outputs are collected in dist/com.fsolauncher.fotg-signed.apk and dist/com.fsolauncher.fs2demo-signed.apk. Each module also contains its APK under build/outputs/apk/release.
 
-A local DEVELOPMENT key is supplied only in this working copy under signing/ and is excluded from source control. These binaries are suitable for testing. Configure a private production key in signing.properties before store distribution. A new working copy can generate a development key with:
-    powershell -ExecutionPolicy Bypass -File scripts/create-development-key.ps1
+A local DEVELOPMENT key is supplied only in this working copy under signing/ and is excluded from source control. These binaries are suitable for testing. Configure a private production key in signing.properties before store distribution. A new working copy can generate a development key with:<br />
+    powershell -ExecutionPolicy Bypass -File scripts/create-development-key.ps1<br />
 
 Production signing.properties has the keys storeFile, storePassword, keyAlias and keyPassword. Keep it and all keystores private. Retain the signing key used for distributed applications so future APKs can update them. Do not publish development keys as production identities.
 
 
 
-Google Play bundles can be built with:
-    .\gradlew.bat :Fotg:bundleRelease :fs2demo:bundleRelease
+Google Play bundles can be built with:<br />
+    .\gradlew.bat :Fotg:bundleRelease :fs2demo:bundleRelease<br />
 
 
 	
 ## Add / Change the FSO build of a module and build APKs
 
 Each module have their own FSO version, and the java loader looks for "libfso.so" along with all other dependencies. In order to add or update the include FSO build, run these commands.
-
-python scripts/import-engine.py Fotg "D:\path\to\jniLibs"
-python scripts/import-engine.py fs2demo "D:\path\to\jniLibs"
+<br />
+python scripts/import-engine.py Fotg "D:\path\to\jniLibs"<br />
+python scripts/import-engine.py fs2demo "D:\path\to\jniLibs"<br />
 ...
 
 ## Content installation and updates
