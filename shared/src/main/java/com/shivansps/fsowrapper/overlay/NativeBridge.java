@@ -17,6 +17,11 @@ public class NativeBridge {
     public static final int CODE_KEY_ALT = 11;
     public static final int CODE_KEY_J = 12;
 
+    // Mouse button payloads are 2000 + SDL's left/middle/right button number.
+    public static final int CODE_MOUSE_LEFT = 2001;
+    public static final int CODE_MOUSE_MIDDLE = 2002;
+    public static final int CODE_MOUSE_RIGHT = 2003;
+
     //Weapons Area
     public static final int CODE_KEY_SPACE = 20;
     public static final int CODE_KEY_CTRL = 21;

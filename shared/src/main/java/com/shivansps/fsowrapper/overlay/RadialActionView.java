@@ -40,8 +40,8 @@ public class RadialActionView extends View {
 
         public Action(String label, String contentDescription, int... keyCodes) {
             if (label == null) throw new IllegalArgumentException("label cannot be null");
-            if (keyCodes == null || keyCodes.length == 0) {
-                throw new IllegalArgumentException("an action needs at least one key code");
+            if (keyCodes == null) {
+                throw new IllegalArgumentException("key codes cannot be null");
             }
             this.label = label;
             this.contentDescription = contentDescription;
@@ -94,6 +94,7 @@ public class RadialActionView extends View {
 
     private OnActionListener actionListener;
     private float[] centerWeights = new float[0];
+    private float[] outerWeights = new float[0];
     private float innerRadiusRatio = 0.56f;
     private float firstOuterActionAngle = -90f;
     private float labelScale = 1f;
@@ -145,6 +146,7 @@ public class RadialActionView extends View {
         resetCenterWeights();
         outerActions.clear();
         outerActions.addAll(outer);
+        resetOuterWeights();
         updateContentDescription();
         invalidate();
     }
@@ -168,6 +170,7 @@ public class RadialActionView extends View {
         releaseAllActions();
         outerActions.clear();
         outerActions.addAll(Arrays.asList(actions));
+        resetOuterWeights();
         updateContentDescription();
         invalidate();
     }
@@ -211,6 +214,36 @@ public class RadialActionView extends View {
         Arrays.fill(centerWeights, 1f);
     }
 
+    public void setOuterWeights(float... weights) {
+        if (weights == null || weights.length != outerActions.size()) {
+            throw new IllegalArgumentException("weights must match the outer action count");
+        }
+        for (float weight : weights) {
+            if (!Float.isFinite(weight) || weight <= 0f) {
+                throw new IllegalArgumentException("weights must be positive and finite");
+            }
+        }
+        outerWeights = Arrays.copyOf(weights, weights.length);
+        invalidate();
+    }
+
+    private void resetOuterWeights() {
+        outerWeights = new float[outerActions.size()];
+        Arrays.fill(outerWeights, 1f);
+    }
+
+    private float outerSweep(int index) {
+        float total = 0;
+        for (float weight : outerWeights) total += weight;
+        return 360f * outerWeights[index] / total;
+    }
+
+    private float outerStart(int index) {
+        float start = firstOuterActionAngle - outerSweep(0) * .5f;
+        for (int i = 0; i < index; i++) start += outerSweep(i);
+        return start;
+    }
+
     @Override
     protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
         updateGeometry(width, height);
@@ -247,12 +280,10 @@ public class RadialActionView extends View {
     }
 
     private void drawOuterActions(Canvas canvas) {
-        final float sweep = 360f / outerActions.size();
-        final float sectorStart = firstOuterActionAngle - sweep * 0.5f;
-
         for (int index = 0; index < outerActions.size(); index++) {
             Action action = outerActions.get(index);
-            float start = sectorStart + index * sweep;
+            float sweep = outerSweep(index);
+            float start = outerStart(index);
 
             sectorPath.reset();
             sectorPath.arcTo(outerBounds, start, sweep);
@@ -272,7 +303,7 @@ public class RadialActionView extends View {
                     centerY + (float) Math.sin(boundaryRadians) * outerRadius,
                     linePaint);
 
-            float labelRadians = (float) Math.toRadians(firstOuterActionAngle + index * sweep);
+            float labelRadians = (float) Math.toRadians(start + sweep * .5f);
             float labelRadius = innerRadius + (outerRadius - innerRadius) * 0.53f;
             float labelX = centerX + (float) Math.cos(labelRadians) * labelRadius;
             float labelY = centerY + (float) Math.sin(labelRadians) * labelRadius;
@@ -282,8 +313,42 @@ public class RadialActionView extends View {
             textPaint.setColor(isPressed(action)
                     ? HudStyle.withOpacity(COLOR_PRESSED_TEXT, 4.5f)
                     : HudStyle.withOpacity(COLOR_TEXT, 1f));
-            drawCenteredLabel(canvas, action.label, labelX, labelY, textSize * labelScale);
+            float labelSize = fitOuterTextSize(action.label, textSize * labelScale,
+                    labelX, labelY, start, sweep);
+            int saved = canvas.save();
+            canvas.clipPath(sectorPath);
+            drawCenteredLabel(canvas, action.label, labelX, labelY, labelSize);
+            canvas.restoreToCount(saved);
         }
+    }
+
+    private float fitOuterTextSize(String label, float requested, float x, float y,
+                                   float start, float sweep) {
+        textPaint.setTextSize(requested);
+        String[] lines = label.split("\\n", -1);
+        float widest = 0;
+        for (String line : lines) widest = Math.max(widest, textPaint.measureText(line));
+        Paint.FontMetrics metrics = textPaint.getFontMetrics();
+        float textHeight = (metrics.descent - metrics.ascent) * (1f + (lines.length - 1) * .86f);
+        float scale = 1f;
+        for (int attempt = 0; attempt < 30; attempt++, scale *= .9f) {
+            float halfWidth = widest * scale * .5f + dp(2f);
+            float halfHeight = textHeight * scale * .5f + dp(2f);
+            boolean fits = true;
+            for (int corner = 0; corner < 4; corner++) {
+                float dx = x - centerX + ((corner & 1) == 0 ? -halfWidth : halfWidth);
+                float dy = y - centerY + ((corner & 2) == 0 ? -halfHeight : halfHeight);
+                float radius = (float) Math.hypot(dx, dy);
+                float angle = ((float) Math.toDegrees(Math.atan2(dy, dx)) - start) % 360f;
+                if (angle < 0f) angle += 360f;
+                if (radius > outerRadius || radius < innerRadius || angle > sweep) {
+                    fits = false;
+                    break;
+                }
+            }
+            if (fits) return requested * scale;
+        }
+        return requested * scale;
     }
 
     private void drawCenterActions(Canvas canvas) {
@@ -411,10 +476,13 @@ public class RadialActionView extends View {
         }
 
         float degrees = (float) Math.toDegrees(Math.atan2(dy, dx));
-        float sweep = 360f / outerActions.size();
-        float relative = normalizeDegrees(degrees - firstOuterActionAngle + sweep * 0.5f);
-        int index = Math.min(outerActions.size() - 1, (int) (relative / sweep));
-        return outerActions.get(index);
+        float relative = normalizeDegrees(degrees - outerStart(0));
+        float boundary = 0;
+        for (int index = 0; index < outerActions.size(); index++) {
+            boundary += outerSweep(index);
+            if (relative < boundary) return outerActions.get(index);
+        }
+        return outerActions.get(outerActions.size() - 1);
     }
 
     private static float normalizeDegrees(float degrees) {
@@ -458,12 +526,13 @@ public class RadialActionView extends View {
         }
 
         if (previousOuter >= 0 && candidateOuter >= 0) {
-            float sweep = 360f / outerActions.size();
-            float candidateCenterAngle = firstOuterActionAngle + candidateOuter * sweep;
+            float sweep = outerSweep(candidateOuter);
+            float candidateCenterAngle = outerStart(candidateOuter) + sweep * .5f;
             float angle = (float) Math.toDegrees(Math.atan2(dy, dx));
             float difference = Math.abs(normalizeDegrees(angle - candidateCenterAngle + 180f) - 180f);
             float angularSlop = (float) Math.toDegrees(
                     Math.atan2(slop, Math.max(innerRadius, distance)));
+            angularSlop = Math.min(angularSlop, sweep * .25f);
             return difference <= sweep * 0.5f - angularSlop ? candidate : previous;
         }
 

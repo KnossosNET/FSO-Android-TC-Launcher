@@ -43,6 +43,8 @@ public class RadialDpadView extends View {
     private final SparseBooleanArray directRingPointers = new SparseBooleanArray();
 
     private boolean floating = false;
+    private boolean ringEnabled = true;
+    private String ringLabel = "TAB";
     private float deadzone = 0.12f;
     private boolean alwaysVisibleWhenFixed = true;
     private boolean visible = false;
@@ -139,6 +141,18 @@ public class RadialDpadView extends View {
         ringActionListener = listener;
     }
 
+    public void setRingEnabled(boolean enabled) {
+        releaseAllControls();
+        ringEnabled = enabled;
+        onSizeChanged(getWidth(), getHeight(), getWidth(), getHeight());
+        invalidate();
+    }
+
+    public void setRingLabel(String label) {
+        ringLabel = label;
+        invalidate();
+    }
+
     private void resetKnob() {
         knobX = centerX;
         knobY = centerY;
@@ -148,7 +162,7 @@ public class RadialDpadView extends View {
     protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
         outerRadius = Math.max(0f, 0.5f * Math.min(width, height) - dp(4f));
         ringInnerRadius = outerRadius * 0.80f;
-        joystickRadius = outerRadius * 0.55f;
+        joystickRadius = ringEnabled ? outerRadius * 0.55f : outerRadius;
         knobRadius = joystickRadius * 0.36f;
         centerX = width * 0.5f;
         centerY = height * 0.5f;
@@ -165,19 +179,21 @@ public class RadialDpadView extends View {
         linePaint.setColor(HudStyle.withOpacity(COLOR_ACCENT, 1f));
         knobPaint.setColor(HudStyle.withOpacity(COLOR_ACCENT, 1.5f));
 
-        ringPath.reset();
-        ringPath.setFillType(Path.FillType.EVEN_ODD);
-        ringPath.addCircle(centerX, centerY, outerRadius, Path.Direction.CW);
-        ringPath.addCircle(centerX, centerY, ringInnerRadius, Path.Direction.CW);
-        fillPaint.setColor(tabPointerCount > 0
-                ? HudStyle.withOpacity(COLOR_PRESSED, 2.8f)
-                : HudStyle.withOpacity(COLOR_PANEL_STRONG, 1.2f));
-        canvas.drawPath(ringPath, fillPaint);
+        if (ringEnabled) {
+            ringPath.reset();
+            ringPath.setFillType(Path.FillType.EVEN_ODD);
+            ringPath.addCircle(centerX, centerY, outerRadius, Path.Direction.CW);
+            ringPath.addCircle(centerX, centerY, ringInnerRadius, Path.Direction.CW);
+            fillPaint.setColor(tabPointerCount > 0
+                    ? HudStyle.withOpacity(COLOR_PRESSED, 2.8f)
+                    : HudStyle.withOpacity(COLOR_PANEL_STRONG, 1.2f));
+            canvas.drawPath(ringPath, fillPaint);
 
-        canvas.drawCircle(centerX, centerY, outerRadius, glowPaint);
-        canvas.drawCircle(centerX, centerY, ringInnerRadius, glowPaint);
-        canvas.drawCircle(centerX, centerY, outerRadius, linePaint);
-        canvas.drawCircle(centerX, centerY, ringInnerRadius, linePaint);
+            canvas.drawCircle(centerX, centerY, outerRadius, glowPaint);
+            canvas.drawCircle(centerX, centerY, ringInnerRadius, glowPaint);
+            canvas.drawCircle(centerX, centerY, outerRadius, linePaint);
+            canvas.drawCircle(centerX, centerY, ringInnerRadius, linePaint);
+        }
 
         fillPaint.setColor(HudStyle.withOpacity(COLOR_PANEL, 1f));
         canvas.drawCircle(centerX, centerY, joystickRadius, fillPaint);
@@ -190,14 +206,16 @@ public class RadialDpadView extends View {
         canvas.drawCircle(knobX, knobY, knobRadius, knobPaint);
         canvas.drawCircle(knobX, knobY, knobRadius, linePaint);
 
-        textPaint.setTextSize(Math.max(dp(10f), (outerRadius - ringInnerRadius) * 0.55f));
-        textPaint.setColor(tabPointerCount > 0
-                ? HudStyle.withOpacity(COLOR_PRESSED_TEXT, 4.5f)
-                : HudStyle.withOpacity(COLOR_TEXT, 1f));
-        Paint.FontMetrics metrics = textPaint.getFontMetrics();
-        float textCenterY = centerY - (outerRadius + ringInnerRadius) * 0.5f;
-        float baseline = textCenterY - (metrics.ascent + metrics.descent) * 0.5f;
-        canvas.drawText("TAB", centerX, baseline, textPaint);
+        if (ringEnabled) {
+            textPaint.setTextSize(Math.max(dp(10f), (outerRadius - ringInnerRadius) * 0.55f));
+            textPaint.setColor(tabPointerCount > 0
+                    ? HudStyle.withOpacity(COLOR_PRESSED_TEXT, 4.5f)
+                    : HudStyle.withOpacity(COLOR_TEXT, 1f));
+            Paint.FontMetrics metrics = textPaint.getFontMetrics();
+            float textCenterY = centerY - (outerRadius + ringInnerRadius) * 0.5f;
+            float baseline = textCenterY - (metrics.ascent + metrics.descent) * 0.5f;
+            canvas.drawText(ringLabel, centerX, baseline, textPaint);
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -269,12 +287,14 @@ public class RadialDpadView extends View {
     }
 
     private boolean isDirectRingHit(float distance, boolean retain) {
+        if (!ringEnabled) return false;
         float inner = outerRadius * (retain ? 0.69f : 0.75f);
         float outer = outerRadius * (retain ? 1.34f : 1.15f);
         return distance >= inner && distance <= outer;
     }
 
     private void reconcileTabContributions(MotionEvent event) {
+        if (!ringEnabled) return;
         int previousCount = tabPointerCount;
         boolean newlyPressed = false;
 

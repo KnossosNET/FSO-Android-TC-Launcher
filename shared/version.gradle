@@ -10,11 +10,15 @@ if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
 def abis = (spec.abis ?: ['arm64-v8a']) as List
 def sharedCommunityFile = rootProject.file('shared/community-links.json')
 if (!sharedCommunityFile.isFile()) throw new GradleException('Missing shared/community-links.json')
-def communityAssets = layout.buildDirectory.dir('generated/sharedCommunityAssets')
-def generateCommunityAssets = tasks.register('generateCommunityAssets', Copy) {
+def sharedTouchFile = rootProject.file('shared/touch-default.json')
+if (!sharedTouchFile.isFile()) throw new GradleException('Missing shared/touch-default.json')
+def sharedAssets = layout.buildDirectory.dir('generated/sharedLauncherAssets')
+def generateSharedAssets = tasks.register('generateSharedAssets', Copy) {
     from sharedCommunityFile
     rename 'community-links.json', 'shared-community-links.json'
-    into communityAssets
+    from sharedTouchFile
+    rename 'touch-default.json', 'shared-touch-default.json'
+    into sharedAssets
 }
 android {
     namespace 'com.shivansps.fsowrapper'
@@ -60,7 +64,7 @@ android {
             java.srcDir rootProject.file('shared/src/main/java')
             res.srcDir rootProject.file('shared/src/main/res')
             assets.srcDir rootProject.file('shared/src/main/assets')
-            assets.srcDir communityAssets
+            assets.srcDir sharedAssets
         }
     }
     externalNativeBuild {
@@ -88,7 +92,7 @@ def validateNatives = tasks.register('validateNatives') {
         }
     }
 }
-tasks.named('preBuild').configure { dependsOn validateNatives, generateCommunityAssets }
+tasks.named('preBuild').configure { dependsOn validateNatives, generateSharedAssets }
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation project(':core')

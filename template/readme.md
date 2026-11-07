@@ -29,7 +29,11 @@ The small shared Hard-Light / FSO / Launcher row is configured once in shared/co
 
 ## Packaged touch profiles
 
-src/main/assets/touch.json is compiled into this APK. Players cannot remap it in the launcher. The shared overlay layout can also be overridden by adding src/main/res/layout/overlay_controls.xml to this module while preserving its view IDs and types.
+The complete shared HUD is defined in shared/touch-default.json. The template's src/main/assets/touch.json inherits it with {"schemaVersion": 1}. Copy the shared JSON into this module's touch.json to define a complete custom layout. Its elements array sets the bars, buttons, wheels and joystick, with their positions, sizes, modes, labels and key codes. The mode button is fixed and always available.
+
+See [the touch layout reference](../shared/touch-layout.md) for the schema and a complete example, including weighted center/outer actions and a joystick without an outer button. These files are compiled into the APK.
+
+Legacy remapping profiles remain supported. For example:
 
 Example touch.json:
     {
@@ -58,7 +62,7 @@ Example touch.json:
       }
     }
 
-initialHudMode ranges from 0 (mode switch only) to 3 (all controls). The mode switch remains available to players. codeMap replaces a shared bridge code everywhere it is used by configurable controls. An empty array disables that code. actions keys are the original radial label, including any escaped newline. buttons keys are Android view IDs such as btnF1, btnEsc or btnAltJ. Explicit action/button codes override codeMap. These codes are held/released together for chords.
+initialHudMode ranges from 0 (mode switch only) to 3 (all controls). The mode switch remains available to players. codeMap replaces a shared bridge code everywhere it is used by configurable controls. An empty array disables that code. actions keys are the original radial label, including any escaped newline, or an explicit action ID. buttons keys are logical JSON IDs such as btnF1, btnEsc or btnAltJ. Explicit action/button codes override codeMap. These codes are held/released together for chords.
 
 Common bridge codes:
 | Code | Meaning |
@@ -78,6 +82,7 @@ Common bridge codes:
 | 48 / 49 | Backslash / Backspace |
 | 50 | C |
 | 51 through 59 | 1 through 9 |
+| 2001 / 2002 / 2003 | Left / middle / right mouse button |
 
 For any other keyboard key, use 1000 + its SDL3 scancode. For example, SDL_SCANCODE_W is 26, so code 1026 presses W. Definitions are in shared/src/main/cpp/third_party/SDL3/SDL_scancode.h. Explicit chords can combine these codes with the standard bridge codes. Physical keyboard input and FSO's own control bindings continue to use the engine's input system.
 

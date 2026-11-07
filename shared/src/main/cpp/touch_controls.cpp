@@ -14,6 +14,7 @@
 
 static std::atomic<Uint32> sdl_window_id{0};
 static std::atomic<bool>  g_mouse_active{false};
+static std::atomic<SDL_MouseButtonFlags> g_mouse_buttons{0};
 static std::atomic<float> g_vx{0}, g_vy{0};
 static Uint64 g_last_ms = 0;
 // dpad/mouse settings
@@ -71,7 +72,31 @@ static void push_alt_combo(jboolean down, SDL_Scancode sc, SDL_Keycode kc) {
     }
 }
 
+static void push_mouse_button(jboolean down, Uint8 button) {
+    SDL_Event event{};
+    event.type = down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;
+    event.button.windowID = ensure_window_id();
+    event.button.which = 0;
+    event.button.button = button;
+    event.button.down = down != 0;
+    event.button.clicks = 1;
+    SDL_GetMouseState(&event.button.x, &event.button.y);
+    SDL_MouseButtonFlags flag = SDL_BUTTON_MASK(button);
+    if (down) g_mouse_buttons.fetch_or(flag);
+    else g_mouse_buttons.fetch_and(~flag);
+    bool pushed = SDL_PushEvent(&event);
+#ifdef ENABLE_LOG
+    LOGI("mouse button=%u down=%d windowID=%u pushed=%d mask=%u", button, down,
+         event.button.windowID, pushed, g_mouse_buttons.load());
+#endif
+}
+
 static void NB_onButton(jint code, jboolean down) {
+    // Mouse buttons use 2000 + SDL's button number (left, middle, right).
+    if (code >= 2001 && code <= 2003) {
+        push_mouse_button(down, static_cast<Uint8>(code - 2000));
+        return;
+    }
     // Developer profiles can address any SDL3 scancode without changing Java or JNI.
     if (code >= 1000 && code < 1000 + SDL_SCANCODE_COUNT) {
         const auto scancode = static_cast<SDL_Scancode>(code - 1000);
@@ -383,7 +408,7 @@ static void NB_mouseTick(jfloat nx, jfloat ny) {
     SDL_Event e{};
     e.type = SDL_EVENT_MOUSE_MOTION;
     e.motion.windowID = ensure_window_id();
-    e.motion.state = 0; // no buttons
+    e.motion.state = g_mouse_buttons.load();
     e.motion.x = 0; // using relative
     e.motion.y = 0;
     e.motion.xrel = dx;

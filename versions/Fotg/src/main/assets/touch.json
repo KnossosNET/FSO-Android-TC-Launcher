@@ -1,6 +1,426 @@
 {
+  "schemaVersion": 1,
   "initialHudMode": 3,
-  "codeMap": {},
-  "actions": {},
-  "buttons": {}
+  "elements": [
+    {
+      "id": "topBarLeftScroller",
+      "type": "buttonBar",
+      "modes": [
+        1,
+        2,
+        3
+      ],
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "widthPercent": 0.5,
+        "widthOffsetDp": -19,
+        "heightDp": 32
+      },
+      "align": "end",
+      "buttons": [
+        {
+          "id": "btn0",
+          "label": "0",
+          "codes": [
+            10
+          ]
+        },
+        {
+          "id": "btnF1",
+          "label": "F1",
+          "codes": [
+            7
+          ]
+        },
+        {
+          "id": "btnF2",
+          "label": "F2",
+          "codes": [
+            8
+          ]
+        },
+        {
+          "id": "btnF3",
+          "label": "F3",
+          "codes": [
+            2
+          ]
+        },
+        {
+          "id": "btnF4",
+          "label": "F4",
+          "codes": [
+            9
+          ]
+        },
+        {
+          "id": "btnEsc",
+          "label": "ESC",
+          "description": "Escape",
+          "codes": [
+            1
+          ]
+        },
+        {
+          "id": "btnKyb",
+          "label": "KEYB",
+          "command": "keyboard",
+          "minWidthDp": 56
+        }
+      ]
+    },
+    {
+      "id": "topBarRightScroller",
+      "type": "buttonBar",
+      "modes": [
+        1,
+        2,
+        3
+      ],
+      "position": {
+        "x": 1,
+        "y": 0
+      },
+      "size": {
+        "widthPercent": 0.5,
+        "widthOffsetDp": -19,
+        "heightDp": 32
+      },
+      "align": "start",
+      "buttons": [
+        {
+          "id": "btnCyclePrimary",
+          "label": "ALT+E",
+          "description": "Cycle primary weapons",
+          "codes": [
+            11,
+            33
+          ]
+        },
+        {
+          "id": "btnCycleSecondary",
+          "label": "ALT+Q",
+          "description": "Cycle secondary weapons",
+          "codes": [
+            11,
+            43
+          ]
+        },
+        {
+          "id": "btnHyperdrive",
+          "label": "ENTER",
+          "description": "Engage hyperdrive",
+          "codes": [
+            1040
+          ]
+        },
+        {
+          "id": "btnSfoils",
+          "label": ";",
+          "description": "Toggle S-foils",
+          "codes": [
+            1051
+          ],
+          "minWidthDp": 32
+        },
+        {
+          "id": "btnBankLeft",
+          "label": "A",
+          "description": "Bank left",
+          "codes": [
+            46
+          ]
+        },
+        {
+          "id": "btnBankRight",
+          "label": "D",
+          "description": "Bank right",
+          "codes": [
+            1007
+          ]
+        }
+      ]
+    },
+    {
+      "id": "communicationWheel",
+      "type": "radial",
+      "description": "Communication controls",
+      "modes": [
+        2,
+        3
+      ],
+      "position": {
+        "x": 0.1,
+        "y": 0.06,
+        "topDp": 32
+      },
+      "size": {
+        "heightPercent": 0.24,
+        "maxHeightDp": 140
+      },
+      "innerRadiusRatio": 0.48,
+      "firstOuterActionAngle": -70,
+      "labelScale": 0.92,
+      "center": [
+        {
+          "label": "C",
+          "codes": [
+            50
+          ]
+        }
+      ],
+      "outer": [
+        {
+          "label": "1",
+          "codes": [
+            51
+          ]
+        },
+        {
+          "label": "2",
+          "codes": [
+            52
+          ]
+        },
+        {
+          "label": "3",
+          "codes": [
+            53
+          ]
+        },
+        {
+          "label": "4",
+          "codes": [
+            54
+          ]
+        },
+        {
+          "label": "5",
+          "codes": [
+            55
+          ]
+        },
+        {
+          "label": "6",
+          "codes": [
+            56
+          ]
+        },
+        {
+          "label": "7",
+          "codes": [
+            57
+          ]
+        },
+        {
+          "label": "8",
+          "codes": [
+            58
+          ]
+        },
+        {
+          "label": "9",
+          "codes": [
+            59
+          ]
+        }
+      ]
+    },
+    {
+      "id": "targetWheel",
+      "type": "radial",
+      "description": "Targeting controls",
+      "modes": [
+        3
+      ],
+      "position": {
+        "x": 0.86,
+        "y": 0.06,
+        "topDp": 32
+      },
+      "size": {
+        "heightPercent": 0.27,
+        "maxHeightDp": 160
+      },
+      "innerRadiusRatio": 0.55,
+      "center": [
+        {
+          "label": "SPACE",
+          "description": "Target ship in reticle",
+          "codes": [
+            20
+          ]
+        }
+      ],
+      "outer": [
+        {
+          "label": "H",
+          "description": "Target next closest hostile",
+          "codes": [
+            31
+          ],
+          "weight": 1.35
+        },
+        {
+          "label": "Y",
+          "description": "Target next closest friendly",
+          "codes": [
+            30
+          ]
+        },
+        {
+          "label": "F",
+          "description": "Target next escort",
+          "codes": [
+            34
+          ]
+        },
+        {
+          "label": "V",
+          "description": "Target next subsystem",
+          "codes": [
+            1025
+          ]
+        },
+        {
+          "label": "B",
+          "description": "Target next live turret",
+          "codes": [
+            32
+          ]
+        },
+        {
+          "label": "Z",
+          "description": "Toggle targeting computer",
+          "codes": [
+            47
+          ]
+        }
+      ],
+      "firstOuterActionAngle": 90
+    },
+    {
+      "id": "dpad",
+      "type": "joystick",
+      "description": "Direction control",
+      "modes": [
+        3
+      ],
+      "position": {
+        "x": 0.01,
+        "y": 1,
+        "topDp": 32,
+        "bottomDp": 6
+      },
+      "size": {
+        "heightPercent": 0.58,
+        "maxHeightDp": 330
+      },
+      "deadzone": 0.12
+    },
+    {
+      "id": "weaponWheel",
+      "type": "radial",
+      "description": "Weapon and ship controls",
+      "modes": [
+        3
+      ],
+      "position": {
+        "x": 0.91,
+        "y": 1,
+        "topDp": 32,
+        "bottomDp": 8
+      },
+      "size": {
+        "heightPercent": 0.5,
+        "maxHeightDp": 280
+      },
+      "innerRadiusRatio": 0.59,
+      "firstOuterActionAngle": -90,
+      "center": [
+        {
+          "label": "PRIMARY",
+          "description": "Fire primary weapons",
+          "codes": [
+            2001
+          ]
+        },
+        {
+          "label": "SECONDARY",
+          "description": "Fire secondary weapons",
+          "codes": [
+            40
+          ]
+        }
+      ],
+      "outer": [
+        {
+          "label": "P",
+          "description": "Toggle active pause",
+          "codes": [
+            1019
+          ]
+        },
+        {
+          "label": "E",
+          "description": "Cycle primary weapon firing sequence",
+          "codes": [
+            33
+          ]
+        },
+        {
+          "label": "Q",
+          "description": "Cycle secondary weapon firing rate",
+          "codes": [
+            43
+          ]
+        },
+        {
+          "label": "CAPS\nLOCK",
+          "description": "Equalize shields",
+          "codes": [
+            1057
+          ]
+        },
+        {
+          "label": "X",
+          "description": "Toggle stationary target mode",
+          "codes": [
+            44
+          ]
+        },
+        {
+          "label": "W",
+          "description": "Forward thrust",
+          "codes": [
+            1026
+          ]
+        },
+        {
+          "label": "S",
+          "description": "Reverse thrust",
+          "codes": [
+            36
+          ]
+        },
+        {
+          "label": "}",
+          "description": "Set throttle to maximum",
+          "codes": [
+            48
+          ]
+        },
+        {
+          "label": "BACK\nSPACE",
+          "description": "Set throttle to zero",
+          "codes": [
+            49
+          ]
+        }
+      ]
+    }
+  ]
 }
