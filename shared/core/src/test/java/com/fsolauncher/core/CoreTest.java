@@ -8,6 +8,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
 import com.fsolauncher.core.Models.*;
+import org.apache.commons.compress.archivers.sevenz.*;
 
 public class CoreTest {
     private static final Gson GSON = new Gson();
@@ -113,6 +114,43 @@ public class CoreTest {
         m.packages.get(0).files.add(a);m.packages.get(0).filelist.add(f);
         return m;
     }
+    private Mod sevenZMod(Path root,String version,String entry,byte[] data,boolean corrupt) throws Exception {
+        Mod m=mod("game",version,"tc");
+        Path archive=Files.createTempFile("fixture",".7z");
+        try {
+            try (SevenZOutputFile out=new SevenZOutputFile(archive.toFile())) {
+                out.setContentCompression(SevenZMethod.COPY);
+                SevenZArchiveEntry file=new SevenZArchiveEntry();file.setName(entry);file.setSize(data.length);
+                out.putArchiveEntry(file);out.write(data);out.closeArchiveEntry();
+            }
+            if (corrupt) {
+                // Alter the stored payload after the 32-byte signature header, preserving its original CRC.
+                byte[] bytes=Files.readAllBytes(archive);bytes[32]^=1;Files.write(archive,bytes);
+            }
+            Archive a=new Archive();a.filename="core.7z";a.dest="";a.filesize=Files.size(archive);
+            // The download hash matches even in the corrupt case, so extraction must detect the bad CRC.
+            a.checksum=Arrays.asList("sha256",SafeFiles.sha256(archive));a.urls=Collections.emptyList();
+            Files.createDirectories(root.resolve("downloads"));
+            Files.move(archive,root.resolve("downloads").resolve(a.checksum.get(1)+".archive"));
+            Member f=new Member();f.filename=entry;f.originalName=entry;f.archive=a.filename;
+            m.packages.get(0).files.add(a);m.packages.get(0).filelist.add(f);
+            return m;
+        } finally { Files.deleteIfExists(archive); }
+    }
+    @Test public void zipAndSevenZExtractionDoNotVerifyIndividualFileChecksums() throws Exception {
+        for (boolean sevenZ : new boolean[]{false,true}) {
+            Path root=Files.createTempDirectory("member-checksum");
+            try {
+                byte[] data="game data".getBytes();
+                Mod game=sevenZ ? sevenZMod(root,"1.0.0","data/test.tbl",data,false)
+                    : zipMod(root,"1.0.0","data/test.tbl",data);
+                game.packages.get(0).filelist.get(0).checksum=Arrays.asList("sha256","0".repeat(64));
+                ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+                Models.State state=installer.install(new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*"));
+                assertArrayEquals(data,Files.readAllBytes(root.resolve(state.mods.get(0).directory).resolve("data/test.tbl")));
+            } finally { SafeFiles.deleteTree(root); }
+        }
+    }
     @Test public void failedUpdatePreservesOldGraphAndSuccessfulUpdateReplacesIt() throws Exception {
         Path root=Files.createTempDirectory("installer");
         try {
@@ -120,10 +158,9 @@ public class CoreTest {
             Mod first=zipMod(root,"1.0.0","data/ships.tbl","first".getBytes());
             installer.install(new Resolver(new Repo(first),true,"arm64-v8a").resolve("game","*"));
             String old=installer.state().mods.get(0).directory;
-            Mod broken=zipMod(root,"2.0.0","data/ships.tbl","broken".getBytes());
-            broken.packages.get(0).filelist.get(0).checksum=Arrays.asList("sha256","0".repeat(64));
+            Mod broken=sevenZMod(root,"2.0.0","data/ships.tbl","broken".getBytes(),true);
             try { installer.install(new Resolver(new Repo(broken),true,"arm64-v8a").resolve("game","*")); fail(); }
-            catch(IOException expected) {}
+            catch(IOException expected) { assertTrue(expected.getMessage(),expected.getMessage().contains("Checksum")); }
             assertEquals("1.0.0",installer.state().rootVersion);
             assertTrue(Files.isDirectory(root.resolve(old)));
             Mod second=zipMod(root,"2.0.0","data/ships.tbl","second".getBytes());
@@ -222,14 +259,13 @@ public class CoreTest {
     @Test public void failedPackageDoesNotAdvanceTheInstalledCount() throws Exception {
         Path root=Files.createTempDirectory("package-failure");
         try {
-            Mod game=zipMod(root,"1.0.0","data/test.tbl","bad".getBytes());
-            game.packages.get(0).filelist.get(0).checksum=Arrays.asList("sha256","0".repeat(64));
+            Mod game=sevenZMod(root,"1.0.0","data/test.tbl","bad".getBytes(),true);
             PackageObserver observer=new PackageObserver();
             try {
                 new ContentInstaller(root,new HttpTransport(observer),observer).install(
                     new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*"));
                 fail();
-            } catch(IOException expected) {}
+            } catch(IOException expected) { assertTrue(expected.getMessage(),expected.getMessage().contains("Checksum")); }
             assertEquals(0,observer.latest.installed);
             assertEquals(1,observer.latest.remaining());
         } finally {SafeFiles.deleteTree(root);}

@@ -161,7 +161,6 @@ public final class ContentInstaller {
             SafeFiles.resolve(target, original);
             Path declaredDestination = SafeFiles.resolve(target, m.filename);
             Models.Member output = new Models.Member();
-            output.checksum = m.checksum;
             output.filename = m.filename;
             if (!declaredDestination.startsWith(archiveDestination)) {
                 // Older repositories express filename relative to the archive destination.
@@ -231,7 +230,7 @@ public final class ContentInstaller {
             }
         }
         if (written != size) throw new IOException("Truncated archive member");
-        SafeFiles.verify(out, expected.checksum);
+        // Rely on the verified archive and extractor checks without rereading each output file.
         progress.update("Installed " + expected.filename, 0, 0);
     }
 }

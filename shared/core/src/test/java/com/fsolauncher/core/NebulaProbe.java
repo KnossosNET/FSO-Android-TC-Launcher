@@ -16,7 +16,7 @@ public final class NebulaProbe {
             Models.State state = new ContentInstaller(root,transport,progress).install(demo);
             if (state.mods.size() != 1 || !state.rootId.equals("fs2_org_demo"))
                 throw new IllegalStateException("Invalid demo installation");
-            System.out.println("Verified full live FS2 Demo download, extraction and every checksum: " + state.rootVersion);
+            System.out.println("Verified full live FS2 Demo download, archive checksums and extraction: " + state.rootVersion);
             SafeFiles.deleteTree(root); return;
         }
         Resolver.Plan full=new Resolver(repo,true,"arm64-v8a").resolve("FotG_R",">=1.1.1");
@@ -27,7 +27,7 @@ public final class NebulaProbe {
         Models.State installed=new ContentInstaller(root,transport,progress).install(small);
         Path table=SafeFiles.resolve(root,installed.modPaths.get(0)).resolve("data/tables");
         if(!Files.isDirectory(table))throw new IllegalStateException("No extracted tables");
-        System.out.println("Verified live Nebula index, full FotG graph, FG_Core 7z and all member checksums: "+installed.rootVersion);
+        System.out.println("Verified live Nebula index, full FotG graph, FG_Core 7z archive checksums and extraction: "+installed.rootVersion);
         SafeFiles.deleteTree(root);
     }
 }
