@@ -1,0 +1,32 @@
+{
+  "displayName": "Solaris",
+  "nebulaId": "Solaris",
+  "contentRange": ">=3.0.2",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0",
+    "-soft_particles",
+    "-enable_shadows",
+    "-dualscanlines",
+    "-targetinfo",
+    "-orbradar",
+    "-rearm_timer",
+    "-aa",
+    "-nomotiondebris",
+    "-ship_choice_3d",
+    "-weapon_choice_3d",
+    "-deferred_cockpit",
+    "-nolightshafts",
+    "-3dwarp",
+    "-warp_flash"
+  ],
+  "communityLinks": [
+    {
+      "label": "Forums",
+      "url": "https://www.hard-light.net/forums/index.php?topic=95719",
+      "icon": "forum"
+    }
+  ]
+}

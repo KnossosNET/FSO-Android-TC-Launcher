@@ -1,0 +1,23 @@
+{
+  "displayName": "Diaspora",
+  "nebulaId": "Diaspora_Release_Version",
+  "contentRange": ">=1.1.4",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0"
+  ],
+  "communityLinks": [
+    {
+      "label": "Forums",
+      "url": "http://www.hard-light.net/forums/index.php?topic=81859.0",
+      "icon": "forum"
+    },
+    {
+      "label": "Video",
+      "url": "http://www.youtube.com/watch?v=DWt2m1xtJbw&feature=plcp",
+      "icon": "web"
+    }
+  ]
+}

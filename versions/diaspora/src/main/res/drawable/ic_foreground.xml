@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preserve the 2:3 metadata tile inside the adaptive foreground. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="29.6296%" android:insetTop="19.4444%"
+    android:insetRight="29.6296%" android:insetBottom="19.4444%">
+    <bitmap android:src="@drawable/diaspora_icon" android:gravity="fill" android:filter="true"/>
+</inset>

@@ -15,19 +15,22 @@ Native Android Studio project for independently installed FreeSpace Open total c
 | Fotg | com.fsolauncher.fotg | FotG_R | 1.1.1 or newer |
 | fs2demo | com.fsolauncher.fs2demo | fs2_org_demo | 1.10.2 or newer |
 | wcsaga | com.fsolauncher.wcsaga | Wing_Commander_Saga | 0.9.65 or newer |
+| diaspora | com.fsolauncher.diaspora | Diaspora_Release_Version | 1.1.4 or newer |
+| solaris | com.fsolauncher.solaris | Solaris | 3.0.2 or newer |
+| starfox | com.fsolauncher.starfox | SF_EH | 0.8.50 or newer |
 
 ## Layout
 
 - shared/src/main: shared native Android launcher, SDL3 host, touch overlay, JNI input bridge and resources.
 - shared/core: plain Java Nebula client, dependency resolver, downloader and transactional content installer.
 - shared/version.gradle: common Android build configuration.
-- versions/Fotg and versions/fs2demo: independent Android application modules.
+- versions/: independent Android application modules for each game.
 - template: instructions and starter module for another TC.
 - scripts: engine import, new-version creation, development signing and native-page validation.
 
 ## Build in Android Studio
 
-Use JDK 17, Android SDK Platform 36, NDK 29.0.14033849 and CMake 3.22.1. Open this root folder, let Gradle sync, and select Fotg or fs2demo as the run configuration. Minimum Android version is 9 / API 28; the builds target API 36. Each version's abis list determines the architectures packaged in its APK.
+Use JDK 17, Android SDK Platform 36, NDK 29.0.14033849 and CMake 3.22.1. Open this root folder, let Gradle sync, and select the desired game module as the run configuration. Minimum Android version is 9 / API 28; the builds target API 36. Each version's abis list determines the architectures packaged in its APK.
 
 The included engine was imported separately into each version from the local FSO Android prebuilts. engine-provenance.json records source filenames and SHA-256 values. SDL3 Java/header sources and native SDL must match; this snapshot uses SDL 3.4.13. Engines export android_main and are loaded only from the installed APK's native library directory.
 
@@ -46,13 +49,14 @@ All selected inputs are validated and copied to staging before replacing existin
 <br />
 Build debug APKs:<br />
     .\gradlew.bat :Fotg:assembleDebug :fs2demo:assembleDebug<br />
+    .\gradlew.bat :diaspora:assembleDebug :solaris:assembleDebug :starfox:assembleDebug<br />
 <br />
 Build signed release APKs:<br />
     .\gradlew.bat releaseApks<br />
 <br />
 	
 	
-Signed outputs are collected in dist/com.fsolauncher.fotg-signed.apk and dist/com.fsolauncher.fs2demo-signed.apk. Each module also contains its APK under build/outputs/apk/release.
+Signed outputs for every configured module are collected in dist/{applicationId}-signed.apk. Each module also contains its APK under build/outputs/apk/release.
 
 A local DEVELOPMENT key is supplied only in this working copy under signing/ and is excluded from source control. These binaries are suitable for testing. Configure a private production key in signing.properties before store distribution. A new working copy can generate a development key with:<br />
     powershell -ExecutionPolicy Bypass -File scripts/create-development-key.ps1<br />

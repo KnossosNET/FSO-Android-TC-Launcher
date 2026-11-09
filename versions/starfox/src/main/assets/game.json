@@ -1,0 +1,38 @@
+{
+  "displayName": "Star Fox Event Horizon",
+  "nebulaId": "SF_EH",
+  "contentRange": ">=0.8.50",
+  "includeRecommended": true,
+  "arguments": [
+    "-no_large_shaders",
+    "-threads",
+    "0",
+    "-noenv",
+    "-3dshockwave",
+    "-soft_particles",
+    "-aa",
+    "-enable_shadows",
+    "-deferred_cockpit",
+    "-ambient_factor",
+    "10",
+    "-no_emissive_light",
+    "-spec_point",
+    "8.6",
+    "-spec_static",
+    "12.8",
+    "-spec_tube",
+    "5.0"
+  ],
+  "communityLinks": [
+    {
+      "label": "Video 1",
+      "url": "https://www.youtube.com/watch?v=gP_eJomGGUw",
+      "icon": "web"
+    },
+    {
+      "label": "Video 2",
+      "url": "https://www.youtube.com/watch?v=aa8FRwUcXQs",
+      "icon": "web"
+    }
+  ]
+}
