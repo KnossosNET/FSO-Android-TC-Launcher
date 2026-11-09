@@ -3,5 +3,5 @@
 <inset xmlns:android="http://schemas.android.com/apk/res/android"
     android:insetLeft="29.6296%" android:insetTop="19.4444%"
     android:insetRight="29.6296%" android:insetBottom="19.4444%">
-    <bitmap android:src="@drawable/starfox_icon" android:gravity="fill" android:filter="true"/>
+    <bitmap android:src="@drawable/sfeh_icon" android:gravity="fill" android:filter="true"/>
 </inset>

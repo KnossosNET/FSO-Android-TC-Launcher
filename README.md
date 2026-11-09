@@ -17,7 +17,7 @@ Native Android Studio project for independently installed FreeSpace Open total c
 | wcsaga | com.fsolauncher.wcsaga | Wing_Commander_Saga | 0.9.65 or newer |
 | diaspora | com.fsolauncher.diaspora | Diaspora_Release_Version | 1.1.4 or newer |
 | solaris | com.fsolauncher.solaris | Solaris | 3.0.2 or newer |
-| starfox | com.fsolauncher.starfox | SF_EH | 0.8.50 or newer |
+| sfeh | com.fsolauncher.sfeh | SF_EH | 0.8.50 or newer |
 
 ## Layout
 
@@ -49,7 +49,7 @@ All selected inputs are validated and copied to staging before replacing existin
 <br />
 Build debug APKs:<br />
     .\gradlew.bat :Fotg:assembleDebug :fs2demo:assembleDebug<br />
-    .\gradlew.bat :diaspora:assembleDebug :solaris:assembleDebug :starfox:assembleDebug<br />
+    .\gradlew.bat :diaspora:assembleDebug :solaris:assembleDebug :sfeh:assembleDebug<br />
 <br />
 Build signed release APKs:<br />
     .\gradlew.bat releaseApks<br />
