@@ -89,14 +89,15 @@ public class CoreTest {
         try { new Resolver(conflict,true,"arm64-v8a").resolve("A","*"); fail(); } catch(IOException expected) {}
     }
     @Test public void realNebulaMetadataResolvesBothGamesWithoutEngineDownloads() throws Exception {
-        Index index = GSON.fromJson(Files.newBufferedReader(Paths.get("fixtures/repo_minimal.json")),Index.class);
-        Mod fotg=GSON.fromJson(Files.newBufferedReader(Paths.get("fixtures/fotg-api.json")),Reply.class).mod;
-        Mod demo=GSON.fromJson(Files.newBufferedReader(Paths.get("fixtures/fs2demo-api.json")),Reply.class).mod;
+        Mod fotg=GSON.fromJson(TestFixtures.read("fotg-api.json"),Reply.class).mod;
+        Mod demo=GSON.fromJson(TestFixtures.read("fs2demo-api.json"),Reply.class).mod;
         Repo repo=new Repo(fotg,demo);
         Resolver.Plan plan=new Resolver(repo,true,"arm64-v8a").resolve("FotG_R",">=1.1.1");
+        assertEquals(1,plan.selections.size());
         assertEquals(11,plan.selections.get(0).packages.size());
         assertEquals(2571863909L,plan.downloadBytes());
         assertEquals(2,new Resolver(repo,true,"arm64-v8a").resolve("fs2_org_demo","*").selections.get(0).packages.size());
+        assertEquals(0,repo.engineReads);
     }
     private Mod zipMod(Path root,String version, String entry, byte[] data) throws Exception {
         Mod m=mod("game",version,"tc");

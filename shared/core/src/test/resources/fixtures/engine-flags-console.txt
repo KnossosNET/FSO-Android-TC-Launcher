@@ -1,0 +1,11 @@
+C:\Games\FSO>fs2_open.exe -get_flags json_v1
+{
+  "version": {
+    "full": "26.0.1",
+    "major": 26,
+    "minor": 0,
+    "build": 1
+  },
+  "flags": []
+}
+C:\Games\FSO>

@@ -3,8 +3,6 @@ package com.fsolauncher.core;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.*;
 import java.util.*;
 
 public class LauncherOptionsTest {
@@ -37,8 +35,8 @@ public class LauncherOptionsTest {
         assertEquals("26.2.0-custom+build.7",
             EngineFlags.fullVersion("{\"version\":{\"full\":\"26.2.0-custom+build.7\",\"major\":26}}"));
     }
-    @Test public void readsTheUserProvidedConsoleResponse() throws Exception {
-        String sample = new String(Files.readAllBytes(Paths.get("fixtures/engine-flags-console.txt")),StandardCharsets.UTF_8);
+    @Test public void readsVersionFromConsoleResponse() throws Exception {
+        String sample = TestFixtures.read("engine-flags-console.txt");
         assertEquals("26.0.1",EngineFlags.fullVersion(sample));
     }
     @Test public void doesNotGuessVersionsWhenFullIsMissingOrInvalid() throws Exception {

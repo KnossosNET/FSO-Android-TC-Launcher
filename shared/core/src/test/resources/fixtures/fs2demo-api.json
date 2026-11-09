@@ -1,0 +1,68 @@
+{
+  "result": true,
+  "mod": {
+    "id": "fs2_org_demo",
+    "version": "1.10.2",
+    "type": "tc",
+    "title": "Freespace 2 Demo",
+    "parent": null,
+    "cmdline": "",
+    "mod_flag": [
+      "fs2_org_demo"
+    ],
+    "packages": [
+      {
+        "name": "demo",
+        "folder": "demo",
+        "status": "required",
+        "environment": null,
+        "dependencies": [
+          {
+            "id": "FSO",
+            "packages": [],
+            "version": ">=24.3.0-20250119"
+          }
+        ],
+        "files": [
+          {
+            "filename": "demo.7z",
+            "dest": "",
+            "filesize": 50025556,
+            "checksum": [
+              "sha256",
+              "c59e9232fafc58e2b61d91923ddd0b129d0116bc4af90b22d954d7d2f78128cb"
+            ],
+            "urls": [
+              "https://cf.fsnebula.org/storage/c5/9e/9232fafc58e2b61d91923ddd0b129d0116bc4af90b22d954d7d2f78128cb",
+              "https://dl.fsnebula.org/storage/c5/9e/9232fafc58e2b61d91923ddd0b129d0116bc4af90b22d954d7d2f78128cb",
+              "https://hestia.feralhosting.com/discovery/nebula/c5/9e/9232fafc58e2b61d91923ddd0b129d0116bc4af90b22d954d7d2f78128cb"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "bugfix",
+        "folder": "bugfix",
+        "status": "required",
+        "environment": null,
+        "dependencies": [],
+        "files": [
+          {
+            "filename": "bugfix.7z",
+            "dest": "",
+            "filesize": 22463,
+            "checksum": [
+              "sha256",
+              "0e1c8cd9fe5c9d2b570ee8fdfa7fbafdda23b4391d918f4e5d6c92f22216ea23"
+            ],
+            "urls": [
+              "https://cf.fsnebula.org/storage/0e/1c/8cd9fe5c9d2b570ee8fdfa7fbafdda23b4391d918f4e5d6c92f22216ea23",
+              "https://dl.fsnebula.org/storage/0e/1c/8cd9fe5c9d2b570ee8fdfa7fbafdda23b4391d918f4e5d6c92f22216ea23",
+              "https://hestia.feralhosting.com/discovery/nebula/0e/1c/8cd9fe5c9d2b570ee8fdfa7fbafdda23b4391d918f4e5d6c92f22216ea23"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
