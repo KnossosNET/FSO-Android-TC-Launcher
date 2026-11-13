@@ -35,8 +35,9 @@ Use JDK 17, Android SDK Platform 36, NDK 29.0.14033849 and CMake 3.22.1. Open th
 The included engine was imported separately into each version from the local FSO Android prebuilts. engine-provenance.json records source filenames and SHA-256 values. SDL3 Java/header sources and native SDL must match; this snapshot uses SDL 3.4.13. Engines export android_main and are loaded only from the installed APK's native library directory.
 
 For a fresh checkout, point local.properties at your SDK, then import your own engine:<br />
-    python scripts/import-engine.py Fotg D:/Fso-Android-Prebuilts/fso_android/jniLibs<br />
-    python scripts/import-engine.py fs2demo D:/Fso-Android-Prebuilts/fso_android/jniLibs<br />
+    python scripts/import-engine.py all D:/Fso-Android-Prebuilts/fso_android/jniLibs<br />
+
+Use `all` to update every folder under `versions/` containing a `version.json`, including newly added modules. Each module is imported independently; failures are reported by name, the other modules are still attempted, and the command exits with an error if any module failed. Replace `all` with a folder name such as `Fotg` or `wcsaga` to update just that module.
 
 The importer automatically detects every supported ABI subfolder in the source (arm64-v8a, armeabi-v7a, x86_64 and x86), imports one release engine and its dependencies for each, and updates both version.json's abis list and engine-provenance.json. The previous abis list does not restrict discovery. DEBUG libraries are excluded unless explicitly selected as the engine. The source directory must be separate from the destination version's jniLibs.
 
@@ -44,6 +45,8 @@ To intentionally package fewer architectures, use an explicit filter:<br />
     python scripts/import-engine.py Fotg D:/jniLibs --abis arm64-v8a x86_64
 
 All selected inputs are validated and copied to staging before replacing existing binaries. If replacement fails, the previous native folders and metadata are restored. Unsupported source subfolders are ignored; a supported ABI folder with missing SDL3 or an ambiguous engine causes the import to fail without modifying the previous installation.
+
+Backup cleanup handles Windows read-only files and directories and briefly retries permission errors from temporary file locks. Recovery backups are kept if restoring the previous installation fails.
 
 
 <br />
@@ -72,11 +75,19 @@ Google Play bundles can be built with:<br />
 	
 ## Add / Change the FSO build of a module and build APKs
 
-Each module have their own FSO version, and the java loader looks for "libfso.so" along with all other dependencies. In order to add or update the include FSO build, run these commands.
-<br />
-python scripts/import-engine.py Fotg "D:\path\to\jniLibs"<br />
-python scripts/import-engine.py fs2demo "D:\path\to\jniLibs"<br />
-...
+Each module has its own FSO version, and the Java loader looks for "libfso.so" along with all other dependencies. Update the included FSO build for every module with one command:
+
+```shell
+python scripts/import-engine.py all D:/jniLibs
+```
+
+To update only one module, replace `all` with its folder name:
+
+```shell
+python scripts/import-engine.py wcsaga D:/jniLibs
+```
+
+Both forms accept `--abis` and `--engine`. Importing updates the packaged libraries and engine metadata; rebuild the APKs afterwards to use the new engine.
 
 ## Content installation and updates
 

@@ -1,8 +1,11 @@
 """Regression tests for ABI discovery, build configuration and safe engine replacement."""
 import importlib.util
+import io
 import json
+import stat
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -52,6 +55,17 @@ class ImportEngineTest(unittest.TestCase):
         self.assertTrue((self.native / "arm64-v8a/obsolete.so").is_file())
         self.assertEqual({"previous": True}, json.loads(self.provenance.read_text("utf-8")))
         self.assertEqual([], list(self.version.glob(".engine-import-*")))
+
+    def run_cli(self, *args):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        code = 0
+        with patch.object(importer, "__file__", str(self.root / "scripts/import-engine.py")), \
+                redirect_stdout(stdout), redirect_stderr(stderr):
+            try:
+                importer.main(list(args))
+            except SystemExit as error:
+                code = error.code
+        return code, stdout.getvalue(), stderr.getvalue()
 
     def test_discovers_all_four_abis_and_updates_packaging_and_hashes(self):
         for abi in importer.SUPPORTED_ABIS:
@@ -137,6 +151,135 @@ class ImportEngineTest(unittest.TestCase):
                 importer.import_engine(self.root, "Fotg", self.source)
         self.assert_original()
         self.assertFalse((self.native / "x86_64").exists())
+
+    @unittest.skipUnless(importer.os.name == "nt", "Windows read-only directory attributes")
+    def test_repeated_import_removes_read_only_backups(self):
+        source = self.input("arm64-v8a")
+        old = self.native / "arm64-v8a"
+        # Windows/OneDrive directories can be read-only even when their files are writable.
+        old.chmod(stat.S_IREAD)
+        (old / "obsolete.so").chmod(stat.S_IREAD)
+        self.config.chmod(stat.S_IREAD)
+        self.provenance.chmod(stat.S_IREAD)
+        (source / "libSDL3.so").chmod(stat.S_IREAD)
+        for _ in range(2):
+            importer.import_engine(self.root, "Fotg", self.source)
+            self.assertEqual([], list(self.version.glob(".engine-import-*")))
+            self.assertEqual(b"engine arm64-v8a", (old / "libfso.so").read_bytes())
+
+    def test_cleanup_retries_temporary_permission_errors(self):
+        self.input("arm64-v8a")
+        real_rmtree = importer.shutil.rmtree
+        attempts = 0
+
+        def locked_once(path, **kwargs):
+            nonlocal attempts
+            attempts += 1
+            if attempts == 1:
+                raise PermissionError("Temporarily locked by sync")
+            return real_rmtree(path, **kwargs)
+
+        with patch.object(importer.shutil, "rmtree", side_effect=locked_once), \
+                patch.object(importer.time, "sleep"):
+            importer.import_engine(self.root, "Fotg", self.source)
+        self.assertEqual(2, attempts)
+        self.assertEqual([], list(self.version.glob(".engine-import-*")))
+
+    @unittest.skipUnless(importer.os.name == "nt", "Windows read-only file attributes")
+    def test_rollback_removes_read_only_imported_files(self):
+        source = self.input("arm64-v8a")
+        (source / "libSDL3.so").chmod(stat.S_IREAD)
+        real_replace = importer.os.replace
+
+        def fail_install(source, target):
+            if Path(target) == self.config.resolve() and Path(source).name == "version.json":
+                raise OSError("Simulated metadata replacement failure")
+            return real_replace(source, target)
+
+        with patch.object(importer.os, "replace", side_effect=fail_install):
+            with self.assertRaisesRegex(OSError, "Simulated metadata replacement failure"):
+                importer.import_engine(self.root, "Fotg", self.source)
+        self.assert_original()
+
+    def test_failed_rollback_preserves_recovery_backups(self):
+        self.input("arm64-v8a")
+        self.input("x86_64")
+        real_replace = importer.os.replace
+
+        def fail_install_and_restore(source, target):
+            if (Path(target) == (self.native / "x86_64").resolve() or
+                    Path(source).parent.name == "backups"):
+                raise OSError("Simulated locked destination")
+            return real_replace(source, target)
+
+        with patch.object(importer.os, "replace", side_effect=fail_install_and_restore):
+            with self.assertRaisesRegex(RuntimeError, "Recovery files remain"):
+                importer.import_engine(self.root, "Fotg", self.source)
+        work, = self.version.glob(".engine-import-*")
+        self.assertEqual(b"previous engine", (work / "backups/0/libfso.so").read_bytes())
+        self.assertEqual(self.original, json.loads(self.config.read_text("utf-8")))
+
+    def test_all_discovers_versions_and_imports_every_source_abi(self):
+        self.input("arm64-v8a")
+        self.input("x86_64")
+        other = self.root / "versions/wcsaga"
+        other.mkdir()
+        (other / "version.json").write_text(json.dumps(self.original), "utf-8")
+        (self.root / "versions/not-a-module").mkdir()
+        for _ in range(2):
+            code, stdout, stderr = self.run_cli("all", str(self.source))
+            self.assertEqual(0, code, stderr)
+            self.assertIn("for Fotg:", stdout)
+            self.assertIn("for wcsaga:", stdout)
+            for version in (self.version, other):
+                spec = json.loads((version / "version.json").read_text("utf-8"))
+                self.assertEqual(["arm64-v8a", "x86_64"], spec["abis"])
+                self.assertEqual(8, spec["versionCode"])
+                provenance = json.loads((version / "engine-provenance.json").read_text("utf-8"))
+                for abi in spec["abis"]:
+                    engine = version / "src/main/jniLibs" / abi / "libfso.so"
+                    self.assertEqual(("engine " + abi).encode(), engine.read_bytes())
+                    self.assertEqual(importer.sha256(engine), provenance["abis"][abi]["sha256"]["libfso.so"])
+                self.assertEqual([], list(version.glob(".engine-import-*")))
+
+    def test_all_supports_engine_and_abi_filters(self):
+        source = self.input("arm64-v8a")
+        (source / "custom.so").write_bytes(b"selected engine")
+        self.input("x86_64")
+        other = self.root / "versions/wcsaga"
+        other.mkdir()
+        (other / "version.json").write_text(json.dumps(self.original), "utf-8")
+        code, _, stderr = self.run_cli("all", str(self.source), "--engine", "custom.so",
+                                       "--abis", "arm64-v8a")
+        self.assertEqual(0, code, stderr)
+        for version in (self.version, other):
+            self.assertEqual(b"selected engine",
+                             (version / "src/main/jniLibs/arm64-v8a/libfso.so").read_bytes())
+            self.assertFalse((version / "src/main/jniLibs/x86_64").exists())
+
+    def test_all_reports_failures_and_continues_with_other_versions(self):
+        self.input("arm64-v8a")
+        broken = self.root / "versions/broken"
+        broken.mkdir()
+        (broken / "version.json").write_text("invalid JSON", "utf-8")
+        code, stdout, stderr = self.run_cli("all", str(self.source))
+        self.assertEqual(1, code)
+        self.assertIn("Import failed for broken:", stderr)
+        self.assertIn("for Fotg:", stdout)
+        self.assertEqual("invalid JSON", (broken / "version.json").read_text("utf-8"))
+        self.assertFalse((broken / "src").exists())
+
+    def test_all_without_versions_is_an_error(self):
+        self.config.unlink()
+        code, _, stderr = self.run_cli("all", str(self.source))
+        self.assertEqual(1, code)
+        self.assertIn("No version.json files found", stderr)
+
+    def test_cli_still_accepts_one_version(self):
+        self.input("arm64-v8a")
+        code, stdout, stderr = self.run_cli("Fotg", str(self.source))
+        self.assertEqual(0, code, stderr)
+        self.assertIn("Imported 1 ABI(s) for Fotg: arm64-v8a.", stdout)
 
 
 if __name__ == "__main__":

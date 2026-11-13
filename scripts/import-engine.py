@@ -4,7 +4,10 @@ import hashlib
 import json
 import os
 import shutil
+import stat
+import sys
 import tempfile
+import time
 from pathlib import Path
 
 SUPPORTED_ABIS = ("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
@@ -24,6 +27,32 @@ def within_version(path, version):
     if resolved == version or not resolved.is_relative_to(version):
         raise ValueError(f"Destination leaves the version folder: {path}")
     return resolved
+
+
+def remove_tree(path, version):
+    """Remove an import-owned tree, including read-only Windows backups."""
+    path = within_version(path, version)
+
+    def retry_writable(function, failed_path, error):
+        if not isinstance(error[1], PermissionError) or function not in (os.unlink, os.rmdir):
+            raise error[1]
+        failed_path = within_version(Path(failed_path), version)
+        failed_path.chmod(failed_path.stat().st_mode | stat.S_IWRITE)
+        function(failed_path)
+
+    for attempt in range(4):
+        try:
+            shutil.rmtree(within_version(path, version), onerror=retry_writable)
+            return
+        except FileNotFoundError:
+            if path.exists():
+                raise
+            return
+        except PermissionError:
+            # OneDrive or antivirus scanning can briefly hold a just-renamed backup.
+            if attempt == 3:
+                raise
+            time.sleep(0.1 * 2 ** attempt)
 
 
 def install_staged(changes, work, version):
@@ -50,7 +79,7 @@ def install_staged(changes, work, version):
                 target = within_version(operation["target"], version)
                 if operation["installed"]:
                     if target.is_dir():
-                        shutil.rmtree(target)
+                        remove_tree(target, version)
                     else:
                         target.unlink()
                 if operation["saved"]:
@@ -149,24 +178,38 @@ def import_engine(root, version_name, source_root, selected_abis=None, engine_na
             raise
     finally:
         if not preserve_recovery:
-            shutil.rmtree(within_version(work, version))
+            remove_tree(work, version)
     return abis
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("version", help="Folder under versions, such as Fotg")
+    parser.add_argument("version", help="Folder under versions, such as Fotg, or 'all' for every version")
     parser.add_argument("source", type=Path, help="jniLibs directory containing Android ABI subfolders")
     parser.add_argument("--abis", nargs="+", choices=SUPPORTED_ABIS,
                         help="Import only these ABIs; defaults to every supported ABI found in the source")
     parser.add_argument("--engine", help="Exact engine filename; otherwise select one release engine per ABI")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    root = Path(__file__).resolve().parents[1]
     try:
-        abis = import_engine(Path(__file__).resolve().parents[1], args.version,
-                             args.source, args.abis, args.engine)
+        versions = ([args.version] if args.version != "all" else
+                    sorted((path.parent.name for path in (root / "versions").glob("*/version.json")
+                            if path.is_file()), key=str.casefold))
+        if not versions:
+            raise ValueError("No version.json files found under versions")
     except (ValueError, OSError, RuntimeError) as error:
         parser.exit(1, f"Import failed: {error}\n")
-    print(f"Imported {len(abis)} ABI(s) for {args.version}: {', '.join(abis)}.")
+    failures = []
+    for version in versions:
+        try:
+            abis = import_engine(root, version, args.source, args.abis, args.engine)
+        except (ValueError, OSError, RuntimeError) as error:
+            print(f"Import failed for {version}: {error}", file=sys.stderr)
+            failures.append(version)
+        else:
+            print(f"Imported {len(abis)} ABI(s) for {version}: {', '.join(abis)}.")
+    if failures:
+        parser.exit(1, f"Import failed for {len(failures)} version(s): {', '.join(failures)}.\n")
     print("Updated version.json and engine-provenance.json. Rebuild the APK to use these engines.")
 
 
