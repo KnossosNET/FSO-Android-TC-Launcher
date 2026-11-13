@@ -2,7 +2,7 @@
   "source": "D:\\jniLibs",
   "abis": {
     "arm64-v8a": {
-      "engine": "libfs2_open_26_2_1_ESVKSDL3_arm64.so",
+      "engine": "libfs2_open_26_2_4_ESVKSDL3_arm64.so",
       "sha256": {
         "libavcodec.so": "d6edc02ad9c107c9ef3d9fe6c7eca570bce08cec6b1df7fab33cb735f09bc5b4",
         "libavformat.so": "bc77b68ea5aa3a2bf6617e9d9649fb182f78ba59bde746851567b19d8a3b49aa",
@@ -12,11 +12,11 @@
         "libshaderc_shared.so": "5d6fe08f75c5be2f1105b7dc8517e16f395faf5f76c8a30cfa5aca1c10489d94",
         "libswresample.so": "8e27d60c411602803420cb2551d48b298c5bb035d2bdba084fcdec37bc7f1dfd",
         "libswscale.so": "6cd70840ccfd14c48c844b295ba458870e67c831bc17041efaf913cca5598614",
-        "libfso.so": "50621b30dbc3f6a21cf02fe83df50913527c5272dc088664cf00f2aec87f6d9c"
+        "libfso.so": "2f916e034990b360fc411c7c8f0ed52d6c5c4c5ad30867fa15423f8f11d42c8b"
       }
     },
     "armeabi-v7a": {
-      "engine": "libfs2_open_26_2_1_ESVKSDL3.so",
+      "engine": "libfs2_open_26_2_4_ESVKSDL3.so",
       "sha256": {
         "libavcodec.so": "8d49eddc680359922bf0405c2bbe44a8c0285fe56d03f256bd7df347fb77bc04",
         "libavformat.so": "c9c80df9df2bc70e9c86426f9e99813d435e5301b90647b3fa771c41e8ae0cb7",
@@ -26,11 +26,11 @@
         "libshaderc_shared.so": "07ef8df990f411d3eec3e13fb79111925593334930887ac5cf149ac7146e02c2",
         "libswresample.so": "e3ea06c9b7583b8f3cee251f919bfe7b2994181d35d53c5b6bfa0802884076f0",
         "libswscale.so": "bb68ac2b6bcb6494a77569ebdead6e65b030af759b80f0bf8bdf04c17c776bac",
-        "libfso.so": "ba9561ebb8361072df41a0268cd9fdd2529947d20466a50c330ba20c132b1476"
+        "libfso.so": "84ae72e5b2828fe5126305588036690893e28f877f37e8616d1217f54e22cc4f"
       }
     },
     "x86_64": {
-      "engine": "libfs2_open_26_2_1_ESVKSDL3_x64_SSE2.so",
+      "engine": "libfs2_open_26_2_4_ESVKSDL3_x64_SSE2.so",
       "sha256": {
         "libavcodec.so": "60d04450b2c537362d6f92b57763fd0c04be87eda549340ae3bffab77dc159bf",
         "libavformat.so": "ed129f0b496ce2d2f19ab96985e47e56aa4b13135c997c78181f4d79230ff7e8",
@@ -40,11 +40,11 @@
         "libshaderc_shared.so": "0ea6573f1611bab63a5f52d568bc33a19d692853a9db86620dbf63d4d3cd5189",
         "libswresample.so": "b0fd18f72507b8814a93d8c2ec702848f42126c02d160cd35d07c4e583d7d40d",
         "libswscale.so": "4ddc16979ada29d9518effaec124656c84e25c0e03093c09e6a3be1dd835c705",
-        "libfso.so": "6695f2fba8dae99b01b230a07b7565982bd2dcedce5d2b83e41d2acc059ba764"
+        "libfso.so": "cfe477e901a3fe8da51fb14ac42c0cbe34a1df54ebd9d703519e21da9f282c37"
       }
     },
     "x86": {
-      "engine": "libfs2_open_26_2_1_ESVKSDL3_SSE2.so",
+      "engine": "libfs2_open_26_2_4_ESVKSDL3_SSE2.so",
       "sha256": {
         "libavcodec.so": "692cf500b55eeca03dc4780c9d32a04064600a9ccc154bb4156ee15a790a2a5a",
         "libavformat.so": "bcb8f75f581ff8ef78453a39b1fc65f0b188a87b6158d007239e7e991182186d",
@@ -54,7 +54,7 @@
         "libshaderc_shared.so": "0cfd5205ce8dceddb682402f8e7116cba0c1c332029aa8e58473edb7277f1fe9",
         "libswresample.so": "389bf40a919bdf21a8d0851c92e9837b1bfd71c6d0c9c17633e920922c40f043",
         "libswscale.so": "05fc331a8ed33baecee620d4ed159514b961d2d5da89b91ade1e90acb1daecee",
-        "libfso.so": "110e8d331761c7069b230b185c7719487d94937348f0f0fc4895365548055901"
+        "libfso.so": "fc1fa34573c3f204ed488ed82f7c2dc13a18e53dfb66b2826dc35a740bdfe8a2"
       }
     }
   }
