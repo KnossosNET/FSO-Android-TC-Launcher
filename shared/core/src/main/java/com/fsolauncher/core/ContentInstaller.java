@@ -5,7 +5,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-import org.apache.commons.compress.archivers.sevenz.*;
 import org.apache.commons.compress.archivers.zip.*;
 import static com.fsolauncher.core.Models.list;
 
@@ -14,9 +13,14 @@ public final class ContentInstaller {
     private final Path root;
     private final HttpTransport transport;
     private final HttpTransport.Progress progress;
+    private final SevenZExtractor sevenZ;
     private final Gson gson = new Gson();
     public ContentInstaller(Path root, HttpTransport transport, HttpTransport.Progress progress) {
+        this(root, transport, progress, SevenZExtractor.JAVA);
+    }
+    public ContentInstaller(Path root, HttpTransport transport, HttpTransport.Progress progress, SevenZExtractor sevenZ) {
         this.root = root.toAbsolutePath().normalize(); this.transport = transport; this.progress = progress;
+        this.sevenZ = Objects.requireNonNull(sevenZ);
     }
     public Models.State state() throws IOException {
         Path manifest = root.resolve("installed.json");
@@ -174,63 +178,87 @@ public final class ContentInstaller {
         if (members.isEmpty()) throw new IOException("Missing file manifest for " + archive.filename);
         Set<String> seen = new HashSet<>();
         String name = archive.filename.toLowerCase(Locale.ROOT);
-        if (name.endsWith(".7z")) {
-            try (SevenZFile input = SevenZFile.builder().setFile(archiveFile.toFile()).setMaxMemoryLimitKb(262144).get()) {
-                SevenZArchiveEntry entry;
-                while ((entry = input.getNextEntry()) != null) {
-                    SafeFiles.checkCancelled();
-                    String path = normal(entry.getName());
-                    SafeFiles.resolve(target, path);
-                    if (entry.isDirectory()) continue;
-                    if (entry.getHasWindowsAttributes() && (entry.getWindowsAttributes() & 0x400) != 0)
-                        throw new IOException("Archive links are not allowed");
-                    Models.Member expected = members.get(path);
-                    if (expected == null) throw new IOException("Undeclared archive member: " + path);
-                    final SevenZFile source = input;
-                    writeMember(new InputStream() {
-                        @Override public int read(byte[] b, int o, int n) throws IOException { return source.read(b,o,n); }
-                        @Override public int read() throws IOException { return source.read(); }
-                    }, entry.getSize(), expected, target, seen, path);
-                }
-            }
-        } else if (name.endsWith(".zip")) {
-            try (ZipFile input = ZipFile.builder().setFile(archiveFile.toFile()).get()) {
-                Enumeration<ZipArchiveEntry> entries = input.getEntries();
-                while (entries.hasMoreElements()) {
-                    SafeFiles.checkCancelled();
-                    ZipArchiveEntry entry = entries.nextElement(); String path = normal(entry.getName());
-                    SafeFiles.resolve(target, path);
-                    if (entry.isUnixSymlink()) throw new IOException("Archive links are not allowed");
-                    if (entry.isDirectory()) continue;
-                    Models.Member expected = members.get(path);
-                    if (expected == null) throw new IOException("Undeclared archive member: " + path);
-                    try (InputStream in = input.getInputStream(entry)) {
-                        writeMember(in, entry.getSize(), expected, target, seen, path);
+        try (ArchiveSink sink = new ArchiveSink(target, members, seen)) {
+            if (name.endsWith(".7z")) {
+                sevenZ.extract(archiveFile, sink);
+            } else if (name.endsWith(".zip")) {
+                try (ZipFile input = ZipFile.builder().setFile(archiveFile.toFile()).get()) {
+                    byte[] buffer = new byte[131072];
+                    Enumeration<ZipArchiveEntry> entries = input.getEntries();
+                    while (entries.hasMoreElements()) {
+                        ZipArchiveEntry entry = entries.nextElement();
+                        OutputStream output = sink.open(entry.getName(), entry.getSize(), entry.isDirectory(), entry.isUnixSymlink());
+                        if (output == null) continue;
+                        try (InputStream in = input.getInputStream(entry)) {
+                            int n;
+                            while ((n = in.read(buffer)) != -1) output.write(buffer, 0, n);
+                        }
+                        sink.complete();
                     }
                 }
-            }
-        } else throw new IOException("Unsupported game archive: " + archive.filename + " (supported: 7z, zip)");
+            } else throw new IOException("Unsupported game archive: " + archive.filename + " (supported: 7z, zip)");
+        }
         if (seen.size() != members.size()) throw new IOException("Archive is missing declared game files");
     }
     private static String normal(String name) { return name.replace('\\','/').replaceFirst("^\\./", ""); }
-    private void writeMember(InputStream in, long size, Models.Member expected, Path target,
-                             Set<String> seen, String original) throws IOException {
-        if (!seen.add(original)) throw new IOException("Duplicate archive entry: " + original);
-        if (size < 0 || size > 32L * 1024 * 1024 * 1024) throw new IOException("Unreasonable game file size");
-        Path out = SafeFiles.resolve(target, expected.filename);
-        if (Files.exists(out)) throw new IOException("Conflicting package file: " + expected.filename);
-        Files.createDirectories(out.getParent());
-        long written = 0;
-        try (OutputStream file = new BufferedOutputStream(Files.newOutputStream(out))) {
-            byte[] buffer = new byte[131072]; int n;
-            while ((n = in.read(buffer)) != -1) {
-                SafeFiles.checkCancelled(); written += n;
-                if (written > size) throw new IOException("File exceeds archive metadata");
-                file.write(buffer,0,n);
+    private final class ArchiveSink extends OutputStream implements SevenZExtractor.Sink {
+        private final Path target;
+        private final Map<String, Models.Member> members;
+        private final Set<String> seen;
+        private final Thread owner = Thread.currentThread();
+        private OutputStream output;
+        private long size, written;
+        private String filename, original;
+        ArchiveSink(Path target, Map<String, Models.Member> members, Set<String> seen) {
+            this.target = target; this.members = members; this.seen = seen;
+        }
+        @Override public void checkCancelled() {
+            if (owner.isInterrupted()) throw new java.util.concurrent.CancellationException("Download paused");
+        }
+        @Override public OutputStream open(String name, long length, boolean directory, boolean link) throws IOException {
+            checkCancelled();
+            if (output != null) throw new IOException("Unfinished archive member");
+            if (name == null) throw new IOException("Missing archive member name");
+            String path = normal(name);
+            SafeFiles.resolve(target, path);
+            if (link) throw new IOException("Archive links are not allowed");
+            if (directory) return null;
+            Models.Member expected = members.get(path);
+            if (expected == null) throw new IOException("Undeclared archive member: " + path);
+            if (seen.contains(path)) throw new IOException("Duplicate archive entry: " + path);
+            if (length < 0 || length > 32L * 1024 * 1024 * 1024) throw new IOException("Unreasonable game file size");
+            Path out = SafeFiles.resolve(target, expected.filename);
+            if (Files.exists(out)) throw new IOException("Conflicting package file: " + expected.filename);
+            Files.createDirectories(out.getParent());
+            size = length; written = 0; filename = expected.filename; original = path;
+            output = new BufferedOutputStream(Files.newOutputStream(out), 131072);
+            return this;
+        }
+        private void checkWrite(int count) throws IOException {
+            checkCancelled();
+            if (output == null) throw new IOException("No archive member is open");
+            if (count > size - written) throw new IOException("File exceeds archive metadata");
+        }
+        @Override public void write(int b) throws IOException {
+            checkWrite(1); output.write(b); written++;
+        }
+        @Override public void write(byte[] b, int offset, int count) throws IOException {
+            checkWrite(count); output.write(b, offset, count); written += count;
+        }
+        @Override public void complete() throws IOException {
+            checkCancelled();
+            if (output == null) return;
+            close();
+            if (written != size) throw new IOException("Truncated archive member");
+            seen.add(original);
+            // Rely on the verified archive and extractor checks without rereading each output file.
+            progress.update("Installed " + filename, 0, 0);
+        }
+        @Override public void close() throws IOException {
+            if (output != null) {
+                OutputStream file = output; output = null;
+                file.close();
             }
         }
-        if (written != size) throw new IOException("Truncated archive member");
-        // Rely on the verified archive and extractor checks without rereading each output file.
-        progress.update("Installed " + expected.filename, 0, 0);
     }
 }

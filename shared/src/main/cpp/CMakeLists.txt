@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.22.1)
 project(touchcontrols)
+add_subdirectory(sevenzip)
 add_library(touchcontrols SHARED touch_controls.cpp)
 add_library(SDL3 SHARED IMPORTED)
 set_target_properties(SDL3 PROPERTIES IMPORTED_LOCATION "${FSO_JNI_DIR}/${ANDROID_ABI}/libSDL3.so")

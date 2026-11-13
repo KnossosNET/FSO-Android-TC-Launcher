@@ -7,6 +7,14 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
 }
 test { workingDir rootProject.projectDir }
+
+tasks.register('prepareSevenZAndroidProbe', Sync) {
+    dependsOn testClasses
+    into layout.buildDirectory.dir('sevenzip-probe')
+    from(sourceSets.main.output) { into 'classes' }
+    from(sourceSets.test.output) { into 'classes' }
+    from(configurations.testRuntimeClasspath) { into 'libs' }
+}
 tasks.register('probeNebula', JavaExec) {
     classpath = sourceSets.test.runtimeClasspath
     mainClass = 'com.fsolauncher.core.NebulaProbe'

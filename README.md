@@ -101,6 +101,19 @@ Public Nebula repositories are supported; private/authenticated releases are not
 
 Archives use HTTPS, mirror fallback, SHA-256 verification and validated byte-range resumption. ZIP and 7z archives are supported. Every extracted file must appear in the package manifest. Extracted files are not reread for individual SHA-256 checks; extraction relies on the verified archive and the extractor's built-in integrity checks. Paths cannot escape the installation, archive links are refused, and downloadable native/JVM executable files are refused. Game scripts are treated as game data, never loaded as Android classes or native libraries.
 
+On Android, 7z extraction uses the bundled native 7-Zip 26.06 decoder instead of
+the Java decoder. LZMA2 decoding uses up to four CPU threads when the archive
+contains independent chunks and memory permits. The worker memory budget adapts
+to available RAM (up to 1 GiB; 128 MiB on low-RAM devices); 7-Zip reduces
+parallelism or decodes sequentially when necessary. Solid archives without
+independent chunks cannot fully use multiple cores. ZIP extraction is unchanged.
+The 7-Zip source and licenses are in `shared/src/main/cpp/third_party/7zip`, and
+license copies are included in APK assets under `licenses/7zip`.
+
+`scripts/test-sevenzip-android.py --serial DEVICE` runs decoder and installation
+tests through Android's VM on a booted emulator/device, including solid LZMA2,
+Unicode names, damaged archives, cancellation and failed-update recovery.
+
 A new immutable content graph is prepared next to the active installation. Only after all packages and dependencies succeed does installed.json atomically activate the complete graph. A failed update preserves the prior installation. Unchanged packages can reuse the installed mod folder; completed verified archives are retained during an interrupted transaction so resuming does not repeat completed downloads. Downloads and obsolete content are removed after a successful activation. Allow space for old and new content plus download archives during installation.
 
 The runtime working directory is Android/data/{applicationId}/files/game. -mod search paths follow Nebula mod_flag order, selected development package folders when applicable and resolved dependencies. Pilot/config files use FSO's per-application SDL preference storage; content cleanup only removes immutable content folders. Game and installer processes hold the same filesystem lock so content is never replaced while FSO is running.

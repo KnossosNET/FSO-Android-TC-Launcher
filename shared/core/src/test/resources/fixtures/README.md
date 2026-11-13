@@ -16,3 +16,8 @@ from the API responses so the resolver checks use real metadata.
 `engine-flags-console.txt` is a representative Windows console capture with a
 version response surrounded by command prompts, exercising `EngineFlags`' JSON
 extraction. It is a small authored sample, not a full engine flag listing.
+
+`solid-lzma2.7z` is an authored 16 MiB solid archive with independent LZMA2
+chunks. It contains `chunk0.tbl` and `chunk1.tbl` (8 MiB each); byte `j` of file
+`i` is `(j + i) & 255`. Generated with 7-Zip 24.09 using
+`7z a -t7z -m0=LZMA2:d=1m -mmt=4 -ms=on solid-lzma2.7z *.tbl`.

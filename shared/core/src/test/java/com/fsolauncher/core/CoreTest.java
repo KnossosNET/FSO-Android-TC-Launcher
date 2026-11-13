@@ -13,6 +13,9 @@ import org.apache.commons.compress.archivers.sevenz.*;
 public class CoreTest {
     private static final Gson GSON = new Gson();
     private static final HttpTransport.Progress NOOP = (m,d,t) -> {};
+    private static ContentInstaller installer(Path root, HttpTransport transport, HttpTransport.Progress progress) {
+        return new ContentInstaller(root, transport, progress, SevenZExtractionTest.extractor());
+    }
     @Test public void semverPrecedenceAndNebulaRanges() {
         assertTrue(Versions.compare("1.10.2","1.9.99") > 0);
         assertTrue(Versions.compare("26.1.0","26.1.0-20260723") > 0);
@@ -146,7 +149,7 @@ public class CoreTest {
                 Mod game=sevenZ ? sevenZMod(root,"1.0.0","data/test.tbl",data,false)
                     : zipMod(root,"1.0.0","data/test.tbl",data);
                 game.packages.get(0).filelist.get(0).checksum=Arrays.asList("sha256","0".repeat(64));
-                ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+                ContentInstaller installer=installer(root,new HttpTransport(NOOP),NOOP);
                 Models.State state=installer.install(new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*"));
                 assertArrayEquals(data,Files.readAllBytes(root.resolve(state.mods.get(0).directory).resolve("data/test.tbl")));
             } finally { SafeFiles.deleteTree(root); }
@@ -155,7 +158,7 @@ public class CoreTest {
     @Test public void failedUpdatePreservesOldGraphAndSuccessfulUpdateReplacesIt() throws Exception {
         Path root=Files.createTempDirectory("installer");
         try {
-            ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+            ContentInstaller installer=installer(root,new HttpTransport(NOOP),NOOP);
             Mod first=zipMod(root,"1.0.0","data/ships.tbl","first".getBytes());
             installer.install(new Resolver(new Repo(first),true,"arm64-v8a").resolve("game","*"));
             String old=installer.state().mods.get(0).directory;
@@ -175,18 +178,48 @@ public class CoreTest {
         Path root=Files.createTempDirectory("traversal");
         try {
             Mod attack=zipMod(root,"1.0.0","../outside","attack".getBytes());
-            ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+            ContentInstaller installer=installer(root,new HttpTransport(NOOP),NOOP);
             try { installer.install(new Resolver(new Repo(attack),true,"arm64-v8a").resolve("game","*")); fail(); }
             catch(IOException expected) {}
             assertNull(installer.state());
         } finally {SafeFiles.deleteTree(root);}
+    }
+    @Test public void sevenZMembersMustBeDeclaredAndCannotBeLinks() throws Exception {
+        for (boolean link : new boolean[]{false,true}) {
+            Path root = Files.createTempDirectory("sevenzip-members");
+            try {
+                Mod game = sevenZMod(root,"1.0.0","actual.tbl",new byte[]{1},false);
+                Models.Package pkg = game.packages.get(0);
+                Archive archive = pkg.files.get(0);
+                if (link) {
+                    Path path = root.resolve("downloads").resolve(archive.checksum.get(1)+".archive");
+                    try (SevenZOutputFile output = new SevenZOutputFile(path.toFile())) {
+                        output.setContentCompression(SevenZMethod.COPY);
+                        SevenZArchiveEntry entry = new SevenZArchiveEntry(); entry.setName("actual.tbl");
+                        entry.setHasWindowsAttributes(true);
+                        entry.setWindowsAttributes((0120777 << 16) | 0x8000);
+                        output.putArchiveEntry(entry); output.write(1); output.closeArchiveEntry();
+                    }
+                    archive.filesize = Files.size(path);
+                    archive.checksum = Arrays.asList("sha256",SafeFiles.sha256(path));
+                    Files.move(path,path.resolveSibling(archive.checksum.get(1)+".archive"));
+                } else {
+                    pkg.filelist.get(0).filename = "declared.tbl";
+                    pkg.filelist.get(0).originalName = "declared.tbl";
+                }
+                ContentInstaller installer = installer(root,new HttpTransport(NOOP),NOOP);
+                try { installer.install(new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*")); fail(); }
+                catch (IOException e) { assertTrue(e.getMessage(),e.getMessage().contains(link ? "links" : "Undeclared")); }
+                assertNull(installer.state());
+            } finally { SafeFiles.deleteTree(root); }
+        }
     }
     @Test public void archiveDestinationIsAppliedWithoutDuplicatingDeclaredPrefix() throws Exception {
         Path root=Files.createTempDirectory("destination");
         try {
             Mod game=zipMod(root,"1.0.0","data/test.tbl","test".getBytes());
             game.packages.get(0).files.get(0).dest="nested";
-            ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+            ContentInstaller installer=installer(root,new HttpTransport(NOOP),NOOP);
             Models.State state=installer.install(new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*"));
             assertTrue(Files.exists(root.resolve(state.mods.get(0).directory).resolve("nested/data/test.tbl")));
             assertFalse(Files.exists(root.resolve(state.mods.get(0).directory).resolve("data/test.tbl")));
@@ -197,7 +230,7 @@ public class CoreTest {
         try {
             Mod game=mod("root","1.0.0","tc","game","*");
             Mod data1=zipMod(root,"1.0.0","data/test.tbl","first".getBytes());
-            ContentInstaller installer=new ContentInstaller(root,new HttpTransport(NOOP),NOOP);
+            ContentInstaller installer=installer(root,new HttpTransport(NOOP),NOOP);
             Models.State first=installer.install(new Resolver(new Repo(game,data1),true,"arm64-v8a").resolve("root","*"));
             String oldRoot=first.mods.stream().filter(m->m.id.equals("root")).findFirst().get().directory;
             Mod data2=zipMod(root,"2.0.0","data/test.tbl","second".getBytes());
@@ -228,14 +261,14 @@ public class CoreTest {
             Mod data=zipMod(root,"1.0.0","data/test.tbl","data".getBytes());
             Resolver.Plan plan=new Resolver(new Repo(game,data),true,"arm64-v8a").resolve("root","*");
             PackageObserver observer=new PackageObserver();
-            ContentInstaller installer=new ContentInstaller(root,new HttpTransport(observer),observer);
+            ContentInstaller installer=installer(root,new HttpTransport(observer),observer);
             installer.install(plan);
             assertEquals(0,observer.snapshots.get(0).installed);
             assertEquals(2,observer.snapshots.get(0).total);
             assertTrue(observer.snapshots.stream().anyMatch(s->s.installed==1 && s.remaining()==1));
             assertEquals(2,observer.latest.installed); assertEquals(0,observer.latest.remaining());
             PackageObserver reuseObserver=new PackageObserver();
-            new ContentInstaller(root,new HttpTransport(reuseObserver),reuseObserver).install(plan);
+            installer(root,new HttpTransport(reuseObserver),reuseObserver).install(plan);
             assertEquals(2,reuseObserver.latest.installed);
             assertTrue(reuseObserver.installedWhileExtracting.isEmpty());
         } finally {SafeFiles.deleteTree(root);}
@@ -250,7 +283,7 @@ public class CoreTest {
             first.packages.get(0).files.addAll(extra.packages.get(0).files);
             first.packages.get(0).filelist.addAll(extra.packages.get(0).filelist);
             PackageObserver observer=new PackageObserver();
-            new ContentInstaller(root,new HttpTransport(observer),observer).install(
+            installer(root,new HttpTransport(observer),observer).install(
                 new Resolver(new Repo(first),true,"arm64-v8a").resolve("game","*"));
             assertEquals(Arrays.asList(0,0),observer.installedWhileExtracting);
             assertEquals(1,observer.latest.installed);
@@ -263,7 +296,7 @@ public class CoreTest {
             Mod game=sevenZMod(root,"1.0.0","data/test.tbl","bad".getBytes(),true);
             PackageObserver observer=new PackageObserver();
             try {
-                new ContentInstaller(root,new HttpTransport(observer),observer).install(
+                installer(root,new HttpTransport(observer),observer).install(
                     new Resolver(new Repo(game),true,"arm64-v8a").resolve("game","*"));
                 fail();
             } catch(IOException expected) { assertTrue(expected.getMessage(),expected.getMessage().contains("Checksum")); }

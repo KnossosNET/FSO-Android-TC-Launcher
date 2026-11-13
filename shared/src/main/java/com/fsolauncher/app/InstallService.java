@@ -72,7 +72,12 @@ public final class InstallService extends Service {
                     HttpTransport transport = new HttpTransport(progress);
                     NebulaRepository repo = new NebulaRepository(root.resolve("metadata"), transport, spec.repositoryMirrors, spec.apiMirrors);
                     Resolver.Plan plan = new Resolver(repo, spec.includeRecommended, GameSpec.abi()).resolve(spec.nebulaId, spec.contentRange);
-                    ContentInstaller installer = new ContentInstaller(root, transport, progress);
+                    ActivityManager manager = getSystemService(ActivityManager.class);
+                    ActivityManager.MemoryInfo memory = new ActivityManager.MemoryInfo();
+                    manager.getMemoryInfo(memory);
+                    long budget = manager.isLowRamDevice() ? 128L << 20 : Math.min(1L << 30, memory.availMem / 4);
+                    SevenZExtractor extractor = new NativeSevenZExtractor(Runtime.getRuntime().availableProcessors(), budget);
+                    ContentInstaller installer = new ContentInstaller(root, transport, progress, extractor);
                     if (!installer.current(plan)) installer.install(plan);
                     else {
                         int count = plan.selections.stream().mapToInt(s -> s.packages.size()).sum();

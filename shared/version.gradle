@@ -18,6 +18,10 @@ def generateSharedAssets = tasks.register('generateSharedAssets', Copy) {
     rename 'community-links.json', 'shared-community-links.json'
     from sharedTouchFile
     rename 'touch-default.json', 'shared-touch-default.json'
+    from(rootProject.file('shared/src/main/cpp/third_party/7zip/DOC')) {
+        include 'License.txt', 'copying.txt'
+        into 'licenses/7zip'
+    }
     into sharedAssets
 }
 android {
